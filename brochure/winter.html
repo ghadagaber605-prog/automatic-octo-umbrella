@@ -35,6 +35,11 @@
     clip-path: ellipse(85% 100% at 50% 0%);
     padding-top: 64px;
   }
+  .logo-badge {
+    position: absolute; top: 26px; right: 30px; z-index: 2; width: 150px; padding: 12px;
+    background: #fff; border-radius: 22px; box-shadow: 0 8px 24px rgba(0, 0, 0, .18);
+  }
+  .logo-badge img { display: block; width: 100%; }
   header .top { font-size: 30px; font-weight: 500; opacity: .92; letter-spacing: .5px; }
   header h1 { font-size: 104px; font-weight: 900; line-height: 1.15; margin-top: 14px; }
   header .sub { font-size: 32px; font-weight: 700; color: #fbe6b0; margin-top: 6px; }
@@ -78,17 +83,19 @@
     border-top: 6px solid var(--gold); background: #fff;
     font-size: 34px; font-weight: 800; color: var(--teal-dark);
   }
+  footer img { height: 72px; }
   footer .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="pattern"></div>
+  <div class="logo-badge"><img src="assets/logo.png" alt="شعار مدارس الرواد"></div>
   <header>
-    <span class="snow" style="top:40px; right:90px">❄</span>
+    <span class="snow" style="top:300px; right:110px">❄</span>
     <span class="snow" style="top:170px; left:80px; font-size:60px">❄</span>
     <span class="snow" style="top:260px; right:200px; font-size:30px">❄</span>
-    <div class="top">إلى أولياء الأمور الكرام · مدارس منطقة القصيم</div>
+    <div class="top">إلى أولياء الأمور الكرام</div>
     <h1>الدوام الشتوي</h1>
     <div class="sub" id="sub">مواعيد الدوام المعتمدة</div>
   </header>
@@ -106,7 +113,7 @@
     والالتزام بمواعيد الدوام المعتمدة
   </div>
 
-  <footer><span class="dot"></span><span id="sign">إدارة المدرسة</span><span class="dot"></span></footer>
+  <footer><span id="sign">إدارة مدارس الرواد للبنات بالبدائع</span></footer>
 </div>
 <script>
   const data = {
@@ -126,7 +133,8 @@
   } else {
     document.querySelector(".page").classList.add("single");
     cards.innerHTML = card(mode);
-    document.getElementById("sub").textContent = "مدارس " + data[mode].title;
+    document.getElementById("sub").textContent = "مدارس الرواد للبنات بالبدائع";
+    document.querySelector(".card .head").textContent = "مواعيد الدوام";
     document.querySelector(".note").innerHTML = mode === "girls"
       ? "نأمل <b>الحرص على حضور الطالبات في الوقت المحدد</b><br>والالتزام بمواعيد الدوام المعتمدة"
       : "نأمل <b>الحرص على حضور الطلاب في الوقت المحدد</b><br>والالتزام بمواعيد الدوام المعتمدة";
