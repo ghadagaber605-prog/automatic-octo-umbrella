@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>الدوام الشتوي</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal-dark: #0b5e5f;
+    --teal: #12807d;
+    --teal-light: #3db5a6;
+    --mint: #e6f4f1;
+    --gold: #c9a24a;
+    --ink: #17323a;
+    --girls: #8a3f74;
+    --boys: #1f4f8a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1350px; background: #fff; }
+  body { font-family: "Tajawal", sans-serif; color: var(--ink); }
+  .page {
+    position: relative; width: 1080px; height: 1350px; overflow: hidden;
+    background: linear-gradient(180deg, #fff 0%, var(--mint) 100%);
+  }
+  .pattern {
+    position: absolute; inset: 0; opacity: .07;
+    background-image:
+      radial-gradient(circle at 25% 25%, var(--teal) 2px, transparent 2.5px),
+      radial-gradient(circle at 75% 75%, var(--teal) 2px, transparent 2.5px);
+    background-size: 48px 48px;
+  }
+  header {
+    position: relative; height: 400px; color: #fff; text-align: center;
+    background: linear-gradient(135deg, var(--teal-dark), var(--teal) 60%, var(--teal-light));
+    clip-path: ellipse(85% 100% at 50% 0%);
+    padding-top: 64px;
+  }
+  header .top { font-size: 30px; font-weight: 500; opacity: .92; letter-spacing: .5px; }
+  header h1 { font-size: 104px; font-weight: 900; line-height: 1.15; margin-top: 14px; }
+  header .sub { font-size: 32px; font-weight: 700; color: #fbe6b0; margin-top: 6px; }
+  .snow { position: absolute; font-size: 44px; opacity: .35; }
+  .date-card {
+    position: relative; margin: -52px auto 0; width: 860px; background: #fff;
+    border-radius: 28px; padding: 28px 36px; text-align: center;
+    box-shadow: 0 14px 40px rgba(11, 94, 95, .18); border-top: 8px solid var(--gold);
+  }
+  .date-card .lbl { font-size: 30px; font-weight: 700; color: var(--teal); }
+  .date-card .day { font-size: 54px; font-weight: 900; margin-top: 6px; }
+  .date-card .dates { display: flex; justify-content: center; gap: 28px; margin-top: 10px; font-size: 34px; font-weight: 700; }
+  .date-card .dates span.sep { color: var(--gold); }
+  .cards { display: flex; gap: 32px; justify-content: center; margin: 34px 56px 0; }
+  .card {
+    flex: 1; background: #fff; border-radius: 28px; overflow: hidden;
+    box-shadow: 0 10px 30px rgba(23, 50, 58, .12);
+  }
+  .card .head { color: #fff; font-size: 44px; font-weight: 800; padding: 20px; text-align: center; }
+  .card.girls .head { background: var(--girls); }
+  .card.boys .head { background: var(--boys); }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 30px 28px; }
+  .row + .row { border-top: 2px dashed #d7e6e3; }
+  .row .k { font-size: 30px; font-weight: 700; white-space: nowrap; }
+  .row .v { font-size: 50px; font-weight: 900; color: var(--teal-dark); direction: ltr; }
+  .row .v small { font-size: 28px; font-weight: 700; margin-left: 10px; }
+  .page:not(.single) .row { flex-direction: column; gap: 6px; padding: 24px 20px; }
+  .page:not(.single) .row .v { font-size: 58px; }
+  .single .card { max-width: 760px; }
+  .single .row { padding: 34px 48px; }
+  .single .row .k { font-size: 40px; }
+  .single .row .v { font-size: 68px; }
+  .note {
+    margin: 30px 70px 0; padding: 22px 34px; border-radius: 22px; text-align: center;
+    background: var(--teal-dark); color: #fff; font-size: 32px; font-weight: 500; line-height: 1.6;
+  }
+  .note b { color: #fbe6b0; }
+  footer {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 110px;
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    border-top: 6px solid var(--gold); background: #fff;
+    font-size: 34px; font-weight: 800; color: var(--teal-dark);
+  }
+  footer .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="pattern"></div>
+  <header>
+    <span class="snow" style="top:40px; right:90px">❄</span>
+    <span class="snow" style="top:170px; left:80px; font-size:60px">❄</span>
+    <span class="snow" style="top:260px; right:200px; font-size:30px">❄</span>
+    <div class="top">إلى أولياء الأمور الكرام · مدارس منطقة القصيم</div>
+    <h1>الدوام الشتوي</h1>
+    <div class="sub" id="sub">مواعيد الدوام المعتمدة</div>
+  </header>
+
+  <div class="date-card">
+    <div class="lbl">يبدأ بمشيئة الله اعتبارًا من</div>
+    <div class="day">يوم الأحد</div>
+    <div class="dates"><span>21 / 05 / 1448هـ</span><span class="sep">◆</span><span>1 نوفمبر 2026م</span></div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="note">
+    نأمل <b>الحرص على حضور الأبناء والبنات في الوقت المحدد</b><br>
+    والالتزام بمواعيد الدوام المعتمدة
+  </div>
+
+  <footer><span class="dot"></span><span id="sign">إدارة المدرسة</span><span class="dot"></span></footer>
+</div>
+<script>
+  const data = {
+    girls: { title: "البنات", line: "07:15", first: "07:30" },
+    boys:  { title: "البنين", line: "07:30", first: "07:45" }
+  };
+  const mode = new URLSearchParams(location.search).get("v") || "all";
+  const card = k => `
+    <div class="card ${k}">
+      <div class="head">${mode === "all" ? "📍 " : ""}مدارس ${data[k].title}</div>
+      <div class="row"><span class="k">الاصطفاف الصباحي</span><span class="v">${data[k].line}<small>ص</small></span></div>
+      <div class="row"><span class="k">الحصة الأولى</span><span class="v">${data[k].first}<small>ص</small></span></div>
+    </div>`;
+  const cards = document.getElementById("cards");
+  if (mode === "all") {
+    cards.innerHTML = card("girls") + card("boys");
+  } else {
+    document.querySelector(".page").classList.add("single");
+    cards.innerHTML = card(mode);
+    document.getElementById("sub").textContent = "مدارس " + data[mode].title;
+    document.querySelector(".note").innerHTML = mode === "girls"
+      ? "نأمل <b>الحرص على حضور الطالبات في الوقت المحدد</b><br>والالتزام بمواعيد الدوام المعتمدة"
+      : "نأمل <b>الحرص على حضور الطلاب في الوقت المحدد</b><br>والالتزام بمواعيد الدوام المعتمدة";
+  }
+</script>
+</body>
+</html>
