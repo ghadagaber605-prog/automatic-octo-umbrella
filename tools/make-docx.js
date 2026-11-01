@@ -3,10 +3,10 @@ const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,Alig
 const BRAND="0F5F5C", SOFT="E3F0EE", ACC="B7791F", ACCSOFT="FBF1E1", LINE="BFB9AD";
 const FONT="Arial", W=9638; // A4 text width with 1" margins ≈ 9638? (11906-2*1134)
 const r=(t,o={})=>new TextRun({text:t,rightToLeft:true,font:FONT,size:o.size||24,bold:o.bold,color:o.color});
-const p=(t,o={})=>new Paragraph({bidirectional:true,alignment:o.align||AlignmentType.RIGHT,spacing:{after:o.after??120,before:o.before??0},children:Array.isArray(t)?t:[r(t,o)],...(o.extra||{})});
-const h=(num,t)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.RIGHT,spacing:{before:240,after:160},
+const p=(t,o={})=>new Paragraph({bidirectional:true,alignment:o.align||AlignmentType.START,spacing:{after:o.after??120,before:o.before??0},children:Array.isArray(t)?t:[r(t,o)],...(o.extra||{})});
+const h=(num,t)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.START,spacing:{before:240,after:160},
   border:{bottom:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:4}},children:[r(num+"  ",{size:34,bold:true,color:ACC}),r(t,{size:34,bold:true,color:BRAND})]});
-const h3=t=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.RIGHT,spacing:{before:240,after:100},children:[r(t,{size:28,bold:true,color:BRAND})]});
+const h3=t=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.START,spacing:{before:240,after:100},children:[r(t,{size:28,bold:true,color:BRAND})]});
 const bord={style:BorderStyle.SINGLE,size:4,color:LINE};
 const borders={top:bord,bottom:bord,left:bord,right:bord};
 const cell=(content,w,o={})=>new TableCell({width:{size:w,type:WidthType.DXA},borders,verticalAlign:o.v||VerticalAlign.CENTER,
@@ -158,7 +158,7 @@ const AXES=[["التخطيط للدرس","وضوح الأهداف، ملاءمة
   ["التقويم","التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية، تذكرة الخروج"]];
 function obsCard(){
   const cols=[1700,3938,1000,1000,1000,1000];
-  const hdr=new TableRow({tableHeader:true,children:["المحور","المؤشرات","٤ متميز","٣ متقدم","٢ متوسط","١ يحتاج دعمًا"].map((h,j)=>cell(p(h,{after:0,size:17,bold:true,color:BRAND,align:j>1?AlignmentType.CENTER:AlignmentType.RIGHT}),cols[j],{fill:SOFT}))});
+  const hdr=new TableRow({tableHeader:true,children:["المحور","المؤشرات","٤ متميز","٣ متقدم","٢ متوسط","١ يحتاج دعمًا"].map((h,j)=>cell(p(h,{after:0,size:17,bold:true,color:BRAND,align:j>1?AlignmentType.CENTER:AlignmentType.START}),cols[j],{fill:SOFT}))});
   const rows=AXES.map(([a,ind])=>new TableRow({cantSplit:true,children:[
     cell(p(a,{after:0,size:18,bold:true}),cols[0]),cell(p(ind,{after:0,size:16,color:"5B6675"}),cols[1]),
     ...[2,3,4,5].map(j=>cell(p("☐",{after:0,size:24,align:AlignmentType.CENTER}),cols[j]))]}));
