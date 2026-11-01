@@ -1,0 +1,101 @@
+const fs=require('fs');
+const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,HeadingLevel,PageBreak,VerticalAlign,LevelFormat,TableLayoutType,HeightRule}=require('docx');
+const BRAND="0F5F5C", SOFT="E3F0EE", ACC="B7791F", ACCSOFT="FBF1E1", LINE="BFB9AD";
+const FONT="Arial", W=9638; // A4 text width with 1" margins ≈ 9638? (11906-2*1134)
+const r=(t,o={})=>new TextRun({text:t,rightToLeft:true,font:FONT,size:o.size||24,bold:o.bold,color:o.color});
+const p=(t,o={})=>new Paragraph({bidirectional:true,alignment:o.align||AlignmentType.RIGHT,spacing:{after:o.after??120,before:o.before??0},children:Array.isArray(t)?t:[r(t,o)],...(o.extra||{})});
+const h=(num,t)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.RIGHT,spacing:{before:240,after:160},
+  border:{bottom:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:4}},children:[r(num+"  ",{size:34,bold:true,color:ACC}),r(t,{size:34,bold:true,color:BRAND})]});
+const h3=t=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.RIGHT,spacing:{before:240,after:100},children:[r(t,{size:28,bold:true,color:BRAND})]});
+const bord={style:BorderStyle.SINGLE,size:4,color:LINE};
+const borders={top:bord,bottom:bord,left:bord,right:bord};
+const cell=(content,w,o={})=>new TableCell({width:{size:w,type:WidthType.DXA},borders,verticalAlign:o.v||VerticalAlign.CENTER,
+  shading:o.fill?{type:ShadingType.CLEAR,color:"auto",fill:o.fill}:undefined,margins:{top:80,bottom:80,left:100,right:100},columnSpan:o.span,
+  children:(Array.isArray(content)?content:[content]).map(c=>typeof c==="string"?p(c,{after:0,bold:o.bold,color:o.color,size:o.size||22,align:o.align}):c)});
+function table(cols,rows,o={}){
+  const total=cols.reduce((a,b)=>a+b,0);
+  return new Table({visuallyRightToLeft:true,width:{size:total,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,
+    rows:rows.map((row,i)=>new TableRow({tableHeader:i===0&&o.header!==false,height:o.h&&(i>0||o.header===false)?{value:o.h,rule:HeightRule.ATLEAST}:undefined,
+      children:row.map((c,j)=>(i===0&&o.header!==false)||(o.labels&&j%2===0)?cell(c,cols[j],{fill:SOFT,bold:true,color:BRAND}):cell(c,cols[j],{}))}))});
+}
+const sp=()=>p("",{after:60});
+
+// Cover
+const cover=[
+  new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{before:1600,after:200},children:[r("سجل الزيارات الصفية",{size:64,bold:true,color:BRAND})]}),
+  p("أداة لتخطيط الزيارات الصفية ومتابعتها وتوثيقها بالصور",{align:AlignmentType.CENTER,size:28,color:"5B6675",after:800}),
+  table([3000,6638],[["اسم المدرسة",""],["العام الدراسي",""],["الزائر (المدير / المشرف / الوكيل)",""],["تاريخ بدء السجل",""]],{header:false,h:600,labels:true}),
+  new Paragraph({children:[new PageBreak()]}),
+];
+
+// 1 Goals
+const goals=[["تحسين جودة التعليم","متابعة الأداء التدريسي داخل الصف ودعمه بما ينعكس على تعلم الطلاب."],
+["تشخيص الاحتياجات المهنية","التعرف على نقاط القوة وفرص التحسين لدى كل معلم بدقة وموضوعية."],
+["التوثيق المنظم","حفظ بيانات الزيارات ونتائجها وشواهدها المصورة في مرجع واحد يسهل الرجوع إليه."],
+["متابعة تنفيذ التوصيات","رصد مدى تطبيق التوصيات السابقة وقياس أثرها في الزيارات اللاحقة."],
+["نشر الممارسات المتميزة","رصد الاستراتيجيات الناجحة وتعميمها عبر الزيارات التبادلية ومجتمعات التعلم."],
+["تحقيق العدالة والشمول","ضمان زيارة جميع المعلمين وجميع المواد والصفوف وفق خطة زمنية متوازنة."],
+["دعم التخطيط للتطوير المهني","بناء البرامج التدريبية والورش على احتياجات فعلية مستخلصة من الزيارات."],
+["تعزيز التواصل البنّاء","ترسيخ ثقافة التغذية الراجعة الإيجابية والشراكة بين الإدارة والمعلمين."]];
+const sec1=[h("١","أهداف السجل"),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
+  table([700,2800,6138],[["م","الهدف","التوضيح"],...goals.map((g,i)=>[{...cell,opts:{}}&&String(i+1),g[0],g[1]])].map((row,i)=>i===0?row:row.map((c,j)=>j===1?p(c,{after:0,bold:true,size:22}):c)))];
+
+// 2 Plan
+const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزيارات الصفية"),
+  h3("أنواع الزيارات الصفية"),
+  table([2000,4838,2800],[["نوع الزيارة","الهدف منها","العدد المقترح لكل معلم"],
+   ["استطلاعية","التعرف على المعلم وبيئة الصف وتحديد الاحتياجات الأولية","زيارة واحدة بداية العام"],
+   ["تقويمية","تقويم الأداء التدريسي وفق بطاقة الملاحظة المعتمدة","زيارتان (زيارة في كل فصل)"],
+   ["متابعة / علاجية","التحقق من تنفيذ التوصيات السابقة وتقديم الدعم اللازم","حسب الحاجة"],
+   ["تبادلية","تبادل الخبرات بين المعلمين ونقل الممارسات المتميزة","زيارة واحدة على الأقل كل فصل"]]),
+  h3("المراحل الزمنية للخطة"),
+  table([2000,2400,5238],[["الفترة","المرحلة","الإجراءات"],
+   ["الأسابيع ١ – ٤","مرحلة الاستطلاع","زيارات استطلاعية لجميع المعلمين، مع إعطاء الأولوية للمعلمين الجدد، وتحديد الاحتياجات التدريبية."],
+   ["الأسابيع ٥ – ١٢","مرحلة التقويم الأولى","زيارات تقويمية وفق البطاقة المعتمدة، واجتماع فردي بعد كل زيارة، وكتابة التوصيات والاتفاق عليها."],
+   ["الأسابيع ١٣ – ٢٠","مرحلة المتابعة والتبادل","زيارات متابعة لتنفيذ التوصيات، وزيارات تبادلية بين المعلمين، وورش لنشر الممارسات."],
+   ["نهاية العام","مرحلة التقويم الختامي","زيارات تقويمية ختامية، وقياس أثر الدعم المقدّم، وتقرير ختامي وتوصيات للعام القادم."]]),
+  h3("محاور الملاحظة أثناء الزيارة"),
+  table([3000,6638],[["المحور","أبرز المؤشرات"],
+   ["التخطيط للدرس","وضوح الأهداف، ملاءمة الأنشطة، تنوّع مصادر التعلم"],
+   ["تنفيذ الدرس","التهيئة، تنوع الاستراتيجيات، توظيف التقنية، إدارة الوقت"],
+   ["إدارة الصف","البيئة الصفية الآمنة، الانضباط، تفاعل الطلاب ومشاركتهم"],
+   ["التقويم","التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية"],
+   ["السمات الشخصية والمهنية","سلامة اللغة، التمكن العلمي، العلاقة مع الطلاب"]]),
+  new Paragraph({children:[new PageBreak()]}),
+  h3("جدول الزيارات المجدولة"),
+  table([500,1200,1900,1300,900,900,1300,1638],[["م","التاريخ","اسم المعلم","المادة","الصف","الحصة","نوع الزيارة","الحالة"],
+   ...Array.from({length:18},(_,i)=>[String(i+1),"","","","","","",""])],{h:480}),
+  p("الحالة: مجدولة / تمت / مؤجلة / ملغاة",{size:20,color:"5B6675",before:80}),
+];
+
+// 3 Documentation: one page per visit, 3 visit forms
+const photoBox=(label)=>new TableCell({width:{size:4819,type:WidthType.DXA},borders:{top:{style:BorderStyle.DASHED,size:8,color:BRAND},bottom:{style:BorderStyle.DASHED,size:8,color:BRAND},left:{style:BorderStyle.DASHED,size:8,color:BRAND},right:{style:BorderStyle.DASHED,size:8,color:BRAND}},
+  shading:{type:ShadingType.CLEAR,color:"auto",fill:SOFT},verticalAlign:VerticalAlign.CENTER,
+  children:[p("📷",{align:AlignmentType.CENTER,size:40,after:60}),p(label,{align:AlignmentType.CENTER,size:22,color:BRAND,bold:true,after:0}),p("(إدراج ← صورة)",{align:AlignmentType.CENTER,size:18,color:"5B6675",after:0})]});
+function visitPage(n){
+  return [new Paragraph({children:[new PageBreak()]}),
+    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"),
+    table([2400,2419,2400,2419],[
+      ["تاريخ الزيارة","","اسم المعلم",""],
+      ["المادة","","الصف / الفصل",""],
+      ["الحصة","","نوع الزيارة","☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
+      ["عنوان الدرس","","التقدير العام","☐ ممتاز ☐ جيد جدًا ☐ جيد ☐ مقبول ☐ يحتاج دعمًا"]],{header:false,h:520,labels:true}),
+    h3("صور الزيارة"),
+    new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:[4819,4819],layout:TableLayoutType.FIXED,
+      rows:[new TableRow({height:{value:2600,rule:HeightRule.EXACT},children:[photoBox("صورة ١"),photoBox("صورة ٢")]}),
+            new TableRow({height:{value:2600,rule:HeightRule.EXACT},children:[photoBox("صورة ٣"),photoBox("صورة ٤")]})]}),
+    h3("نقاط القوة"),
+    table([9638],[[""]],{header:false,h:950}),
+    h3("التوصيات"),
+    table([9638],[[""]],{header:false,h:950}),
+    table([4819,4819],[["توقيع المعلم: ....................................","توقيع الزائر: ...................................."]],{header:false,h:500}),
+  ];
+}
+// shade label cells in visit info tables: post-process not needed; keep simple.
+const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور"),
+  p("لكل زيارة صفحة مستقلة: املأ بياناتها، ثم أدرج صور الزيارة داخل المربعات (إدراج ← صورة) أو الصقها مباشرة، ثم اكتب نقاط القوة والتوصيات ووقّع. ولإضافة زيارة جديدة انسخ صفحة نموذج والصقها في نهاية السجل.",{color:"5B6675",size:20}),
+  ...[1,2,3,4,5,6].flatMap(n=>visitPage(n)).slice(1)];
+
+const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
+  sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1134,right:1134}}},children:[...cover,...sec1,...sec2,...sec3]}]});
+Packer.toBuffer(doc).then(b=>fs.writeFileSync('/home/user/automatic-octo-umbrella/سجل-الزيارات-الصفية.docx',b));
