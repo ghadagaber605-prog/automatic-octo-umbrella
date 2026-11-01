@@ -25,6 +25,13 @@ const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","ي
 const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const fmt=d=>{const x=new Date(d+"T00:00:00Z");return `${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]}`;};
 const day=d=>DAYS[new Date(d+"T00:00:00Z").getUTCDay()];
+// one form per teacher: her next upcoming visit (from today), else her most recent one
+function formVisits(){
+  const by=new Map();
+  for(const v of V.all){(by.get(v.teacher)||by.set(v.teacher,[]).get(v.teacher)).push(v);}
+  const pick=[...by.values()].map(vs=>vs.find(v=>v.date>="2026-11-01")||vs[vs.length-1]);
+  return pick.sort((a,b)=>a.date.localeCompare(b.date)||(+a.period||9)-(+b.period||9));
+}
 function visitsTable(){
   const cols=[450,1450,1600,1500,1150,650,1450,1388];
   const fills={"تمت":"E5F3E9","لم تُوثّق":"FDF0DC","مجدولة":null};
@@ -96,13 +103,14 @@ const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزي�
 const photoBox=(label)=>new TableCell({width:{size:4819,type:WidthType.DXA},borders:{top:{style:BorderStyle.DASHED,size:8,color:BRAND},bottom:{style:BorderStyle.DASHED,size:8,color:BRAND},left:{style:BorderStyle.DASHED,size:8,color:BRAND},right:{style:BorderStyle.DASHED,size:8,color:BRAND}},
   shading:{type:ShadingType.CLEAR,color:"auto",fill:SOFT},verticalAlign:VerticalAlign.CENTER,
   children:[p("📷",{align:AlignmentType.CENTER,size:40,after:60}),p(label,{align:AlignmentType.CENTER,size:22,color:BRAND,bold:true,after:0}),p("(إدراج ← صورة)",{align:AlignmentType.CENTER,size:18,color:"5B6675",after:0})]});
-function visitPage(n){
+function visitPage(n,v){
+  v=v||{};
   return [new Paragraph({children:[new PageBreak()]}),
-    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"),
+    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"+(v.teacher?"  —  "+v.teacher:"")),
     table([2400,2419,2400,2419],[
-      ["تاريخ الزيارة","","اسم المعلم",""],
-      ["المادة","","الصف / الفصل",""],
-      ["الحصة","","نوع الزيارة","☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
+      ["تاريخ الزيارة",v.date?`${day(v.date)} ${fmt(v.date)} 2026`:"","اسم المعلمة",v.teacher||""],
+      ["المادة",v.subject&&v.subject!=="—"?v.subject:"","الصف / الفصل",v.cls||""],
+      ["الحصة",v.period||"","نوع الزيارة",v.type||"☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
       ["عنوان الدرس","","التقدير العام","☐ ممتاز ☐ جيد جدًا ☐ جيد ☐ مقبول ☐ يحتاج دعمًا"]],{header:false,h:520,labels:true}),
     h3("صور الزيارة"),
     new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:[4819,4819],layout:TableLayoutType.FIXED,
@@ -112,13 +120,14 @@ function visitPage(n){
     table([9638],[[""]],{header:false,h:950}),
     h3("التوصيات"),
     table([9638],[[""]],{header:false,h:950}),
-    table([4819,4819],[["توقيع المعلم: ....................................","توقيع الزائر: ...................................."]],{header:false,h:500}),
+    table([4819,4819],[["توقيع المعلمة: ....................................","توقيع الزائر: ...................................."]],{header:false,h:500}),
   ];
 }
 // shade label cells in visit info tables: post-process not needed; keep simple.
 const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور"),
   p("لكل زيارة صفحة مستقلة: املأ بياناتها، ثم أدرج صور الزيارة داخل المربعات (إدراج ← صورة) أو الصقها مباشرة، ثم اكتب نقاط القوة والتوصيات ووقّع. ولإضافة زيارة جديدة انسخ صفحة نموذج والصقها في نهاية السجل.",{color:"5B6675",size:20}),
-  ...[1,2,3,4,5,6].flatMap(n=>visitPage(n)).slice(1)];
+  p("وُزّعت النماذج على المعلمات: نموذج لكل معلمة مُعبّأ ببيانات زيارتها القادمة في جدول الزيارات، ومرتبة حسب تاريخ الزيارة.",{color:"5B6675",size:20}),
+  ...formVisits().flatMap((v,i)=>visitPage(i+1,v)).slice(1)];
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1134,right:1134}}},children:[...cover,...sec1,...sec2,...sec3]}]});
