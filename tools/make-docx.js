@@ -196,4 +196,5 @@ const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق ال�
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1134,right:1134}}},children:[...cover,...sec1,...sec2,...sec3]}]});
-Packer.toBuffer(doc).then(b=>fs.writeFileSync(__dirname+'/../سجل-الزيارات-الصفية.docx',b));
+const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
+Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});
