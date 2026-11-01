@@ -18,6 +18,30 @@ function table(cols,rows,o={}){
     rows:rows.map((row,i)=>new TableRow({tableHeader:i===0&&o.header!==false,height:o.h&&(i>0||o.header===false)?{value:o.h,rule:HeightRule.ATLEAST}:undefined,
       children:row.map((c,j)=>(i===0&&o.header!==false)||(o.labels&&j%2===0)?cell(c,cols[j],{fill:SOFT,bold:true,color:BRAND}):cell(c,cols[j],{}))}))});
 }
+
+const V=require('./visits-data.js');
+const cnt=st=>V.all.filter(v=>v.status===st).length;
+const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const fmt=d=>{const x=new Date(d+"T00:00:00Z");return `${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]}`;};
+const day=d=>DAYS[new Date(d+"T00:00:00Z").getUTCDay()];
+function visitsTable(){
+  const cols=[450,1450,1600,1500,1150,650,1450,1388];
+  const fills={"تمت":"E5F3E9","لم تُوثّق":"FDF0DC","مجدولة":null};
+  const sc={"تمت":"2F7D46","لم تُوثّق":"A15C07","مجدولة":"0F5F5C"};
+  const c=(t,w,o={})=>cell(p(t,{after:0,size:18,bold:o.bold,color:o.color,align:o.align}),w,{fill:o.fill});
+  const head=new TableRow({tableHeader:true,children:["م","التاريخ","اسم المعلمة","المادة","الصف","الحصة","نوع الزيارة","الحالة"].map((h,j)=>cell(h,cols[j],{fill:SOFT,bold:true,color:BRAND,size:18}))});
+  const rows=V.all.map((v,i)=>new TableRow({cantSplit:true,children:[
+    c(String(i+1),cols[0],{align:AlignmentType.CENTER}),
+    c(`${day(v.date)} ${fmt(v.date)}`,cols[1]),
+    c(v.teacher,cols[2],{bold:true}),
+    c(v.subject,cols[3]),c(v.cls,cols[4]),c(v.period||"—",cols[5],{align:AlignmentType.CENTER}),
+    c(v.type,cols[6],{color:v.src==="الخارطة"?ACC:undefined,bold:v.src==="الخارطة"}),
+    c(v.status,cols[7],{bold:true,color:sc[v.status],fill:fills[v.status]||undefined}),
+  ]}));
+  return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[head,...rows]});
+}
+
 const sp=()=>p("",{after:60});
 
 // Cover
@@ -62,10 +86,10 @@ const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزي�
    ["التقويم","التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية"],
    ["السمات الشخصية والمهنية","سلامة اللغة، التمكن العلمي، العلاقة مع الطلاب"]]),
   new Paragraph({children:[new PageBreak()]}),
-  h3("جدول الزيارات المجدولة"),
-  table([500,1200,1900,1300,900,900,1300,1638],[["م","التاريخ","اسم المعلم","المادة","الصف","الحصة","نوع الزيارة","الحالة"],
-   ...Array.from({length:18},(_,i)=>[String(i+1),"","","","","","",""])],{h:480}),
-  p("الحالة: مجدولة / تمت / مؤجلة / ملغاة",{size:20,color:"5B6675",before:80}),
+  h3("جدول الزيارات"),
+  p(`مصدر البيانات: سجلّ الزيارات الصفية الإلكتروني وسجل زيارات خارطة التعليم والتعلم — حتى ${fmt("2026-11-01")}. إجمالي الزيارات: ${V.all.length} · تمت: ${cnt("تمت")} · مجدولة قادمة: ${cnt("مجدولة")} · مضى موعدها ولم تُوثّق: ${cnt("لم تُوثّق")}.`,{size:20,color:"5B6675"}),
+  visitsTable(),
+  p("الحالة: «تمت» زيارة موثقة · «مجدولة» موعدها قادم · «لم تُوثّق» مضى موعدها دون تسجيل تنفيذها في السجل. نوع «خارطة التعليم والتعلم» = حضور درس مصمم وفق الخارطة.",{size:18,color:"5B6675",before:80}),
 ];
 
 // 3 Documentation: one page per visit, 3 visit forms
@@ -98,4 +122,4 @@ const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق ال�
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1134,right:1134}}},children:[...cover,...sec1,...sec2,...sec3]}]});
-Packer.toBuffer(doc).then(b=>fs.writeFileSync('/home/user/automatic-octo-umbrella/سجل-الزيارات-الصفية.docx',b));
+Packer.toBuffer(doc).then(b=>fs.writeFileSync(__dirname+'/../سجل-الزيارات-الصفية.docx',b));
