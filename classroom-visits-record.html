@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سجل الزيارات الصفية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f4ef; --paper:#ffffff; --ink:#1f2a37; --muted:#5b6675; --line:#e3ded3;
+    --brand:#0f5f5c; --brand-soft:#e3f0ee; --accent:#b7791f; --accent-soft:#fbf1e1;
+    --ok:#2f7d46; --ok-soft:#e5f3e9; --warn:#a15c07; --warn-soft:#fdf0dc; --bad:#a83232;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#151a1f; --paper:#1d242b; --ink:#e8ecef; --muted:#9aa6b2; --line:#2f3942;
+      --brand:#5cc2b8; --brand-soft:#1f3634; --accent:#e0a84f; --accent-soft:#3a2f1c;
+      --ok:#6cc58a; --ok-soft:#1e3326; --warn:#e6a54a; --warn-soft:#3a2d18; --bad:#e07a7a; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal",system-ui,sans-serif;line-height:1.7;font-size:16px}
+  .wrap{max-width:1040px;margin:0 auto;padding:24px 16px 64px}
+  header.cover{background:var(--brand);color:#fff;border-radius:18px;padding:28px 28px 22px;position:relative;overflow:hidden}
+  @media (prefers-color-scheme: dark){ header.cover{background:#12403d} }
+  header.cover h1{margin:0 0 4px;font-size:34px;font-weight:800;letter-spacing:0}
+  header.cover p{margin:0;opacity:.9}
+  header.cover::after{content:"";position:absolute;inset-inline-start:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:18px}
+  .meta label{display:block;font-size:13px;opacity:.85;margin-bottom:2px}
+  .meta input{width:100%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:8px 10px;font:inherit}
+  .meta input::placeholder{color:rgba(255,255,255,.6)}
+  nav.toc{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 6px}
+  nav.toc a{text-decoration:none;color:var(--brand);background:var(--brand-soft);padding:6px 14px;border-radius:999px;font-weight:700;font-size:14px}
+  section{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:24px;margin-top:20px}
+  h2{margin:0 0 4px;font-size:24px;display:flex;align-items:center;gap:10px}
+  h2 .num{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--brand);color:#fff;font-size:17px}
+  @media (prefers-color-scheme: dark){ h2 .num{color:#0f1d1c} }
+  .lead{color:var(--muted);margin:0 0 18px}
+  h3{font-size:18px;margin:22px 0 10px;color:var(--brand)}
+  .goals{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;padding:0;margin:0;list-style:none;counter-reset:g}
+  .goals li{counter-increment:g;border:1px solid var(--line);border-radius:12px;padding:14px 14px 14px 14px;position:relative;background:var(--bg)}
+  .goals li::before{content:counter(g);position:absolute;inset-inline-end:12px;top:10px;font-weight:800;color:var(--accent);font-size:20px}
+  .goals b{display:block;margin-bottom:2px;padding-inline-end:26px}
+  .goals span{color:var(--muted);font-size:14.5px}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{border-bottom:1px solid var(--line);padding:9px 8px;text-align:start;vertical-align:top}
+  th{background:var(--brand-soft);color:var(--brand);font-weight:700;white-space:nowrap}
+  .tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  .tbl table th:first-child{border-start-start-radius:12px}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:13px;font-weight:700;white-space:nowrap}
+  .t1{background:var(--brand-soft);color:var(--brand)} .t2{background:var(--accent-soft);color:var(--accent)}
+  .t3{background:var(--ok-soft);color:var(--ok)} .t4{background:var(--warn-soft);color:var(--warn)}
+  .timeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .phase{border:1px solid var(--line);border-top:4px solid var(--brand);border-radius:12px;padding:12px 14px;background:var(--bg)}
+  .phase:nth-child(2){border-top-color:var(--accent)} .phase:nth-child(3){border-top-color:var(--ok)} .phase:nth-child(4){border-top-color:var(--warn)}
+  .phase .when{font-size:13px;color:var(--muted)} .phase b{display:block;font-size:16px}
+  .phase ul{margin:6px 0 0;padding-inline-start:18px;font-size:14.5px}
+  form.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:end}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:3px;font-weight:500}
+  input,select,textarea{width:100%;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 10px;font:inherit}
+  textarea{min-height:76px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--brand);outline-offset:1px}
+  .btn{border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer;background:var(--brand);color:#fff}
+  @media (prefers-color-scheme: dark){ .btn{color:#0f1d1c} }
+  .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+  .btn.small{padding:4px 10px;font-size:13px}
+  .btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .full{grid-column:1/-1}
+  .empty{color:var(--muted);text-align:center;padding:18px}
+  .notice{border-radius:10px;padding:10px 14px;margin:0 0 14px;font-size:14.5px;background:var(--warn-soft);color:var(--warn);display:none}
+  .notice.show{display:block}
+  .drop{display:block;border:2px dashed var(--brand);border-radius:14px;padding:26px;text-align:center;background:var(--brand-soft);cursor:pointer;transition:.15s}
+  .drop.over{background:var(--accent-soft);border-color:var(--accent)}
+  .drop .ic{font-size:40px;line-height:1}
+  .drop strong{display:block;color:var(--brand);font-size:17px;margin-top:6px}
+  .drop small{color:var(--muted)}
+  .previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .previews .pv{position:relative;width:96px;height:96px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+  .previews img{width:100%;height:100%;object-fit:cover}
+  .previews button{position:absolute;top:4px;inset-inline-start:4px;border:0;border-radius:50%;width:22px;height:22px;background:rgba(0,0,0,.6);color:#fff;cursor:pointer;line-height:22px;padding:0}
+  .stars{display:flex;gap:4px;direction:ltr;justify-content:flex-end}
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;margin-top:8px}
+  .card{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column}
+  .card .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:2px;background:var(--line)}
+  .card .photos img{width:100%;aspect-ratio:1;object-fit:cover;display:block;cursor:zoom-in}
+  .card .photos.one{grid-template-columns:1fr} .card .photos.one img{aspect-ratio:16/10}
+  .card .body{padding:12px 14px;flex:1}
+  .card .body h4{margin:0 0 2px;font-size:17px}
+  .card .sub{color:var(--muted);font-size:14px}
+  .card .notes{font-size:14.5px;margin:8px 0 0;white-space:pre-wrap}
+  .card .foot{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;border-top:1px solid var(--line)}
+  .rating{color:var(--accent);letter-spacing:2px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+  .stat{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--bg)}
+  .stat .v{font-size:26px;font-weight:800;color:var(--brand)} .stat .k{font-size:13px;color:var(--muted)}
+  .lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;place-items:center;z-index:50;padding:20px}
+  .lightbox.show{display:grid} .lightbox img{max-width:100%;max-height:90vh;border-radius:8px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;place-items:center;z-index:60;padding:16px}
+  .modal.show{display:grid}
+  .modal .box{background:var(--paper);border-radius:14px;padding:20px;max-width:380px;width:100%}
+  .modal .row{display:flex;gap:8px;justify-content:flex-start;margin-top:14px}
+  .toast{position:fixed;bottom:20px;inset-inline-start:50%;transform:translateX(50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:10px;opacity:0;transition:.2s;pointer-events:none;z-index:70}
+  .toast.show{opacity:1}
+  select.status{padding:4px 6px;font-size:13px;width:auto}
+  footer{color:var(--muted);text-align:center;font-size:13px;margin-top:26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="cover">
+    <h1>سجل الزيارات الصفية</h1>
+    <p>أداة لتخطيط الزيارات الصفية ومتابعتها وتوثيقها بالصور</p>
+    <div class="meta">
+      <div><label for="m-school">اسم المدرسة</label><input id="m-school" placeholder="اكتب اسم المدرسة"></div>
+      <div><label for="m-year">العام الدراسي</label><input id="m-year" placeholder="1447 هـ / 2026 – 2027 م"></div>
+      <div><label for="m-sup">الزائر (المدير / المشرف / الوكيل)</label><input id="m-sup" placeholder="الاسم والصفة"></div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#goals">١. أهداف السجل</a>
+    <a href="#plan">٢. خطة الزيارات الصفية</a>
+    <a href="#uploads">٣. توثيق الزيارات بالصور</a>
+  </nav>
+
+  <!-- ===================== 1. الأهداف ===================== -->
+  <section id="goals">
+    <h2><span class="num">١</span>أهداف السجل</h2>
+    <p class="lead">يهدف سجل الزيارات الصفية إلى ما يلي:</p>
+    <ul class="goals">
+      <li><b>تحسين جودة التعليم</b><span>متابعة الأداء التدريسي داخل الصف ودعمه بما ينعكس على تعلم الطلاب.</span></li>
+      <li><b>تشخيص الاحتياجات المهنية</b><span>التعرف على نقاط القوة وفرص التحسين لدى كل معلم بدقة وموضوعية.</span></li>
+      <li><b>التوثيق المنظم</b><span>حفظ بيانات الزيارات ونتائجها وشواهدها المصورة في مرجع واحد يسهل الرجوع إليه.</span></li>
+      <li><b>متابعة تنفيذ التوصيات</b><span>رصد مدى تطبيق التوصيات السابقة وقياس أثرها في الزيارات اللاحقة.</span></li>
+      <li><b>نشر الممارسات المتميزة</b><span>رصد الاستراتيجيات الناجحة وتعميمها عبر الزيارات التبادلية ومجتمعات التعلم.</span></li>
+      <li><b>تحقيق العدالة والشمول</b><span>ضمان زيارة جميع المعلمين وجميع المواد والصفوف وفق خطة زمنية متوازنة.</span></li>
+      <li><b>دعم التخطيط للتطوير المهني</b><span>بناء البرامج التدريبية والورش على احتياجات فعلية مستخلصة من الزيارات.</span></li>
+      <li><b>تعزيز التواصل البنّاء</b><span>ترسيخ ثقافة التغذية الراجعة الإيجابية والشراكة بين الإدارة والمعلمين.</span></li>
+    </ul>
+  </section>
+
+  <!-- ===================== 2. الخطة ===================== -->
+  <section id="plan">
+    <h2><span class="num">٢</span>خطة الزيارات الصفية</h2>
+    <p class="lead">أنواع الزيارات ومراحلها الزمنية، يليها جدول الزيارات المجدولة لكل معلم.</p>
+
+    <h3>أنواع الزيارات الصفية</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>نوع الزيارة</th><th>الهدف منها</th><th>العدد المقترح لكل معلم</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag t1">استطلاعية</span></td><td>التعرف على المعلم وبيئة الصف وتحديد الاحتياجات الأولية</td><td>زيارة واحدة بداية العام</td></tr>
+        <tr><td><span class="tag t2">تقويمية</span></td><td>تقويم الأداء التدريسي وفق بطاقة الملاحظة المعتمدة</td><td>زيارتان (زيارة في كل فصل)</td></tr>
+        <tr><td><span class="tag t3">متابعة / علاجية</span></td><td>التحقق من تنفيذ التوصيات السابقة وتقديم الدعم اللازم</td><td>حسب الحاجة</td></tr>
+        <tr><td><span class="tag t4">تبادلية</span></td><td>تبادل الخبرات بين المعلمين ونقل الممارسات المتميزة</td><td>زيارة واحدة على الأقل كل فصل</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>المراحل الزمنية للخطة</h3>
+    <div class="timeline">
+      <div class="phase"><span class="when">الأسابيع ١ – ٤</span><b>مرحلة الاستطلاع</b>
+        <ul><li>زيارات استطلاعية لجميع المعلمين</li><li>إعطاء الأولوية للمعلمين الجدد</li><li>تحديد الاحتياجات التدريبية</li></ul></div>
+      <div class="phase"><span class="when">الأسابيع ٥ – ١٢</span><b>مرحلة التقويم الأولى</b>
+        <ul><li>زيارات تقويمية وفق البطاقة المعتمدة</li><li>اجتماع فردي بعد كل زيارة</li><li>كتابة التوصيات والاتفاق عليها</li></ul></div>
+      <div class="phase"><span class="when">الأسابيع ١٣ – ٢٠</span><b>مرحلة المتابعة والتبادل</b>
+        <ul><li>زيارات متابعة لتنفيذ التوصيات</li><li>زيارات تبادلية بين المعلمين</li><li>ورش وتطبيقات لنشر الممارسات</li></ul></div>
+      <div class="phase"><span class="when">نهاية العام</span><b>مرحلة التقويم الختامي</b>
+        <ul><li>زيارات تقويمية ختامية</li><li>قياس أثر الدعم المقدّم</li><li>تقرير ختامي وتوصيات للعام القادم</li></ul></div>
+    </div>
+
+    <h3>محاور الملاحظة أثناء الزيارة</h3>
+    <div class="tbl"><table>
+      <thead><tr><th>المحور</th><th>أبرز المؤشرات</th></tr></thead>
+      <tbody>
+        <tr><td><b>التخطيط للدرس</b></td><td>وضوح الأهداف، ملاءمة الأنشطة، تنوّع مصادر التعلم</td></tr>
+        <tr><td><b>تنفيذ الدرس</b></td><td>التهيئة، تنوع الاستراتيجيات، توظيف التقنية، إدارة الوقت</td></tr>
+        <tr><td><b>إدارة الصف</b></td><td>البيئة الصفية الآمنة، الانضباط، تفاعل الطلاب ومشاركتهم</td></tr>
+        <tr><td><b>التقويم</b></td><td>التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية</td></tr>
+        <tr><td><b>السمات الشخصية والمهنية</b></td><td>سلامة اللغة، التمكن العلمي، العلاقة مع الطلاب</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3>جدول الزيارات المجدولة</h3>
+    <div class="notice" id="plan-note"></div>
+    <form class="grid" id="plan-form" autocomplete="off">
+      <div class="field"><label>التاريخ</label><input type="date" name="date" required></div>
+      <div class="field"><label>اسم المعلم</label><input name="teacher" required placeholder="اسم المعلم"></div>
+      <div class="field"><label>المادة</label><input name="subject" required placeholder="المادة"></div>
+      <div class="field"><label>الصف / الفصل</label><input name="grade" placeholder="مثال: ٣/٢"></div>
+      <div class="field"><label>الحصة</label><input name="period" placeholder="مثال: الثالثة"></div>
+      <div class="field"><label>نوع الزيارة</label>
+        <select name="type"><option>استطلاعية</option><option>تقويمية</option><option>متابعة / علاجية</option><option>تبادلية</option></select></div>
+      <div class="field full"><label>محور التركيز</label><input name="focus" placeholder="مثال: استراتيجيات التعلم النشط، التقويم التكويني..."></div>
+      <div class="field"><button class="btn" type="submit">+ إضافة إلى الخطة</button></div>
+    </form>
+    <div class="tbl" style="margin-top:14px"><table>
+      <thead><tr><th>م</th><th>التاريخ</th><th>المعلم</th><th>المادة</th><th>الصف</th><th>الحصة</th><th>النوع</th><th>محور التركيز</th><th>الحالة</th><th></th></tr></thead>
+      <tbody id="plan-body"><tr><td colspan="10" class="empty">جارٍ التحميل…</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <!-- ===================== 3. التوثيق والرفع ===================== -->
+  <section id="uploads">
+    <h2><span class="num">٣</span>توثيق الزيارات بالصور</h2>
+    <p class="lead">صوّر الزيارة من الجوال أو ارفع الصور من جهازك، ثم أكمل بيانات الزيارة واحفظها.</p>
+    <div class="notice" id="up-note"></div>
+
+    <div class="stats" id="stats"></div>
+
+    <form id="visit-form" autocomplete="off">
+      <label class="drop" id="drop" for="file">
+        <div class="ic">📷</div>
+        <strong>اضغط لتصوير الزيارة أو اختيار الصور</strong>
+        <small>أو اسحب الصور وأفلتها هنا — يمكن اختيار أكثر من صورة (حتى ٢٠ ميجابايت للصورة)</small>
+      </label>
+      <input type="file" id="file" accept="image/*" multiple hidden>
+      <div class="previews" id="previews"></div>
+
+      <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:14px">
+        <div class="field"><label>تاريخ الزيارة</label><input type="date" name="date" required></div>
+        <div class="field"><label>اسم المعلم</label><input name="teacher" required placeholder="اسم المعلم" list="teachers"></div>
+        <div class="field"><label>المادة</label><input name="subject" required placeholder="المادة"></div>
+        <div class="field"><label>الصف / الفصل</label><input name="grade" placeholder="مثال: ٣/٢"></div>
+        <div class="field"><label>نوع الزيارة</label>
+          <select name="type"><option>استطلاعية</option><option>تقويمية</option><option>متابعة / علاجية</option><option>تبادلية</option></select></div>
+        <div class="field"><label>التقدير العام</label>
+          <select name="rating"><option value="5">ممتاز (٥)</option><option value="4">جيد جدًا (٤)</option><option value="3">جيد (٣)</option><option value="2">مقبول (٢)</option><option value="1">يحتاج دعمًا (١)</option></select></div>
+        <div class="field full"><label>نقاط القوة</label><textarea name="strengths" placeholder="أبرز الممارسات المتميزة التي لوحظت"></textarea></div>
+        <div class="field full"><label>التوصيات</label><textarea name="notes" placeholder="التوصيات المتفق عليها مع المعلم"></textarea></div>
+        <div class="field"><button class="btn" id="save-visit" type="submit">حفظ الزيارة ورفع الصور</button></div>
+      </div>
+      <datalist id="teachers"></datalist>
+    </form>
+
+    <h3>الزيارات الموثقة</h3>
+    <div class="field" style="max-width:300px;margin-bottom:10px"><input id="filter" placeholder="بحث باسم المعلم أو المادة…"></div>
+    <div class="gallery" id="gallery"><div class="empty">جارٍ التحميل…</div></div>
+  </section>
+
+  <footer>سجل الزيارات الصفية — تُحفظ البيانات والصور في هذه الصفحة ويراها كل من شاركتها معه.</footer>
+</div>
+
+<div class="lightbox" id="lightbox"><img alt=""></div>
+<div class="modal" id="confirm"><div class="box"><b id="confirm-msg">تأكيد الحذف؟</b>
+  <div class="row"><button class="btn danger" id="confirm-yes">حذف</button><button class="btn ghost" id="confirm-no">إلغاء</button></div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const toast = m => { const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600); };
+  const ask = msg => new Promise(res => { $("#confirm-msg").textContent=msg; const m=$("#confirm"); m.classList.add("show");
+    const done=v=>{m.classList.remove("show"); $("#confirm-yes").onclick=$("#confirm-no").onclick=null; res(v);};
+    $("#confirm-yes").onclick=()=>done(true); $("#confirm-no").onclick=()=>done(false); });
+  const fmtDate = d => { if(!d) return ""; try{ return new Date(d+"T00:00:00").toLocaleDateString("ar-SA-u-ca-gregory",{year:"numeric",month:"long",day:"numeric"}); }catch(e){ return d; } };
+  const typeClass = t => ({"استطلاعية":"t1","تقويمية":"t2","متابعة / علاجية":"t3","تبادلية":"t4"}[t]||"t1");
+  const ratingText = r => ({5:"ممتاز",4:"جيد جدًا",3:"جيد",2:"مقبول",1:"يحتاج دعمًا"}[r]||"");
+  const today = () => new Date().toISOString().slice(0,10);
+  document.querySelectorAll('input[type=date]').forEach(i=>i.value=today());
+
+  let db=null, assets=null, canWrite=true;
+  let plan=[], visits=[], local=false;
+  let pending=[]; // {file,url}
+
+  // ---------- rendering ----------
+  function renderPlan(){
+    const tb=$("#plan-body");
+    if(!plan.length){ tb.innerHTML='<tr><td colspan="10" class="empty">لا توجد زيارات مجدولة بعد. أضف أول زيارة من النموذج أعلاه.</td></tr>'; return; }
+    const rows=[...plan].sort((a,b)=>(a.d.date||"").localeCompare(b.d.date||""));
+    tb.innerHTML=rows.map((r,i)=>{ const d=r.d; return `<tr>
+      <td>${i+1}</td><td style="white-space:nowrap">${esc(fmtDate(d.date))}</td><td><b>${esc(d.teacher)}</b></td><td>${esc(d.subject)}</td>
+      <td>${esc(d.grade)}</td><td>${esc(d.period)}</td><td><span class="tag ${typeClass(d.type)}">${esc(d.type)}</span></td><td>${esc(d.focus)}</td>
+      <td><select class="status" data-id="${esc(r.id)}" ${canWrite?"":"disabled"}>
+        ${["مجدولة","تمت","مؤجلة","ملغاة"].map(s=>`<option ${d.status===s?"selected":""}>${s}</option>`).join("")}</select></td>
+      <td>${canWrite?`<button class="btn danger small" data-del-plan="${esc(r.id)}">حذف</button>`:""}</td></tr>`; }).join("");
+    $("#teachers").innerHTML=[...new Set(plan.map(p=>p.d.teacher).filter(Boolean))].map(t=>`<option value="${esc(t)}">`).join("");
+  }
+  function renderStats(){
+    const done=plan.filter(p=>p.d.status==="تمت").length;
+    const teachers=new Set(visits.map(v=>v.d.teacher)).size;
+    const photos=visits.reduce((s,v)=>s+((v.d.photos||[]).length),0);
+    $("#stats").innerHTML=[["الزيارات المجدولة",plan.length],["المنفذة من الخطة",done],["الزيارات الموثقة",visits.length],["المعلمون المزارون",teachers],["الصور المرفوعة",photos]]
+      .map(([k,v])=>`<div class="stat"><div class="v">${v}</div><div class="k">${k}</div></div>`).join("");
+  }
+  function photoSrc(p){ return p.local || p.url || ("/_blob/"+p.id); }
+  function renderGallery(){
+    const q=($("#filter").value||"").trim();
+    const rows=[...visits].filter(v=>!q||(v.d.teacher||"").includes(q)||(v.d.subject||"").includes(q))
+      .sort((a,b)=>(b.d.date||"").localeCompare(a.d.date||""));
+    const g=$("#gallery");
+    if(!rows.length){ g.innerHTML=`<div class="empty">${visits.length?"لا نتائج مطابقة.":"لم تُوثّق أي زيارة بعد. صوّر أول زيارة وارفعها من الأعلى."}</div>`; renderStats(); return; }
+    g.innerHTML=rows.map(v=>{ const d=v.d, ph=d.photos||[]; return `<article class="card">
+      ${ph.length?`<div class="photos ${ph.length===1?"one":""}">${ph.map(p=>`<img loading="lazy" src="${esc(photoSrc(p))}" alt="صورة الزيارة">`).join("")}</div>`:""}
+      <div class="body"><h4>${esc(d.teacher)}</h4>
+        <div class="sub">${esc(d.subject)}${d.grade?" — الصف "+esc(d.grade):""} · ${esc(fmtDate(d.date))}</div>
+        <div style="margin-top:6px"><span class="tag ${typeClass(d.type)}">${esc(d.type)}</span></div>
+        ${d.strengths?`<p class="notes"><b>نقاط القوة:</b> ${esc(d.strengths)}</p>`:""}
+        ${d.notes?`<p class="notes"><b>التوصيات:</b> ${esc(d.notes)}</p>`:""}
+      </div>
+      <div class="foot"><span class="rating" title="${esc(ratingText(d.rating))}">${"★".repeat(+d.rating||0)}${"☆".repeat(5-(+d.rating||0))} <small style="color:var(--muted);letter-spacing:0">${esc(ratingText(d.rating))}</small></span>
+        ${canWrite?`<button class="btn danger small" data-del-visit="${esc(v.id)}">حذف</button>`:""}</div></article>`; }).join("");
+    renderStats();
+  }
+  function renderPreviews(){
+    $("#previews").innerHTML=pending.map((p,i)=>`<div class="pv"><img src="${p.url}" alt=""><button type="button" data-rm="${i}" aria-label="إزالة">×</button></div>`).join("");
+  }
+
+  // ---------- local fallback ----------
+  function goLocal(msg){
+    local=true;
+    ["#plan-note","#up-note"].forEach(s=>{ $(s).textContent=msg; $(s).classList.add("show"); });
+    renderPlan(); renderGallery();
+  }
+
+  // ---------- meta ----------
+  const metaIds={school:"#m-school",year:"#m-year",sup:"#m-sup"};
+  let metaTimer=null, metaSaving=Promise.resolve();
+  Object.entries(metaIds).forEach(([k,s])=>$(s).addEventListener("input",()=>{
+    if(!db||!canWrite) return; clearTimeout(metaTimer);
+    metaTimer=setTimeout(()=>{ const body={}; Object.entries(metaIds).forEach(([kk,ss])=>body[kk]=$(ss).value.trim());
+      metaSaving=metaSaving.then(()=>db.doc("meta/info").set(body)).catch(()=>{}); },800);
+  }));
+
+  // ---------- plan form ----------
+  $("#plan-form").addEventListener("submit", async e=>{
+    e.preventDefault(); const f=e.target; const d=Object.fromEntries(new FormData(f)); d.status="مجدولة"; d.createdAt=Date.now();
+    Object.keys(d).forEach(k=>typeof d[k]==="string"&&(d[k]=d[k].trim()));
+    if(local||!db){ plan.push({id:"l"+Date.now(),d}); renderPlan(); renderStats(); }
+    else { try{ await db.collection("plan").add(d); }catch(err){ return fail(err); } }
+    f.reset(); f.date.value=today(); toast("أُضيفت الزيارة إلى الخطة");
+  });
+  $("#plan-body").addEventListener("change", async e=>{
+    const s=e.target.closest("select.status"); if(!s) return;
+    const r=plan.find(p=>p.id===s.dataset.id); if(!r) return;
+    if(local||!db){ r.d={...r.d,status:s.value}; renderStats(); return; }
+    try{ await db.doc("plan/"+r.id).update({status:s.value}); }catch(err){ fail(err); }
+  });
+  $("#plan-body").addEventListener("click", async e=>{
+    const b=e.target.closest("[data-del-plan]"); if(!b) return;
+    if(!await ask("حذف هذه الزيارة من الخطة؟")) return;
+    const id=b.dataset.delPlan;
+    if(local||!db){ plan=plan.filter(p=>p.id!==id); renderPlan(); renderStats(); return; }
+    try{ await db.doc("plan/"+id).delete(); }catch(err){ fail(err); }
+  });
+
+  // ---------- uploads ----------
+  function addFiles(list){
+    for(const f of list){ if(!f.type.startsWith("image/")) continue;
+      if(f.size>20*1024*1024){ toast("الصورة "+f.name+" أكبر من ٢٠ ميجابايت"); continue; }
+      pending.push({file:f,url:URL.createObjectURL(f)}); }
+    renderPreviews();
+  }
+  $("#file").addEventListener("change",e=>{ addFiles(e.target.files); e.target.value=""; });
+  const drop=$("#drop");
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("over");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("over");}));
+  drop.addEventListener("drop",e=>addFiles(e.dataTransfer.files));
+  $("#previews").addEventListener("click",e=>{ const b=e.target.closest("[data-rm]"); if(!b) return;
+    const [p]=pending.splice(+b.dataset.rm,1); URL.revokeObjectURL(p.url); renderPreviews(); });
+
+  $("#visit-form").addEventListener("submit", async e=>{
+    e.preventDefault(); const f=e.target; const btn=$("#save-visit");
+    const fd=new FormData(f); const d={}; ["date","teacher","subject","grade","type","rating","strengths","notes"].forEach(k=>d[k]=String(fd.get(k)||"").trim());
+    d.rating=+d.rating; d.createdAt=Date.now(); d.photos=[];
+    btn.disabled=true; const orig=btn.textContent;
+    try{
+      if(local||!db||!assets){
+        d.photos=pending.map(p=>({local:p.url})); visits.push({id:"l"+Date.now(),d}); renderGallery();
+      } else {
+        let i=0;
+        for(const p of pending){ i++; btn.textContent=`جارٍ رفع الصورة ${i} من ${pending.length}…`;
+          const r=await assets.upload(p.file); d.photos.push({id:r.id,url:r.url}); }
+        btn.textContent="جارٍ الحفظ…";
+        await db.collection("visits").add(d);
+        pending.forEach(p=>URL.revokeObjectURL(p.url));
+      }
+      pending=[]; renderPreviews(); f.reset(); f.date.value=today(); toast("حُفظت الزيارة بنجاح ✓");
+    }catch(err){ fail(err); }
+    finally{ btn.disabled=false; btn.textContent=orig; }
+  });
+
+  $("#gallery").addEventListener("click", async e=>{
+    const img=e.target.closest(".photos img");
+    if(img){ $("#lightbox img").src=img.src; $("#lightbox").classList.add("show"); return; }
+    const b=e.target.closest("[data-del-visit]"); if(!b) return;
+    if(!await ask("حذف هذه الزيارة وصورها نهائيًا؟")) return;
+    const id=b.dataset.delVisit; const v=visits.find(x=>x.id===id);
+    if(local||!db){ visits=visits.filter(x=>x.id!==id); renderGallery(); return; }
+    try{
+      await db.doc("visits/"+id).delete();
+      if(assets&&v) for(const p of (v.d.photos||[])) if(p.id){ try{ await assets.delete(p.id); }catch(_){} }
+      toast("حُذفت الزيارة");
+    }catch(err){ fail(err); }
+  });
+  $("#lightbox").addEventListener("click",()=>$("#lightbox").classList.remove("show"));
+  $("#filter").addEventListener("input",renderGallery);
+
+  function fail(err){
+    const c=err&&err.code;
+    if(c==="invalid_argument"&&!local){ canWrite=false; setReadOnly(); toast("لا تملك صلاحية التعديل على هذا السجل"); return; }
+    if(c==="quota_exceeded"){ toast("امتلأت مساحة التخزين — احذف بعض الزيارات القديمة"); return; }
+    toast("تعذّر الحفظ، حاول مرة أخرى"); console.error(err);
+  }
+  function setReadOnly(){
+    document.querySelectorAll("#plan-form, #visit-form").forEach(f=>f.style.display="none");
+    Object.values(metaIds).forEach(s=>$(s).readOnly=true);
+    ["#plan-note","#up-note"].forEach(s=>{ $(s).textContent="وضع العرض فقط: يمكنك الاطلاع على السجل دون تعديله."; $(s).classList.add("show"); });
+    renderPlan(); renderGallery();
+  }
+
+  // ---------- boot ----------
+  renderStats();
+  (async()=>{
+    if(!window.claude||!window.claude.use){ goLocal("التخزين غير متاح في هذا العرض: ما تضيفه الآن يظهر مؤقتًا ولن يُحفظ بعد إغلاق الصفحة."); return; }
+    try{ db=await window.claude.use("db"); }catch(_){ db=null; }
+    if(!db){ goLocal("التخزين غير متاح (قد تحتاج لتسجيل الدخول): ما تضيفه الآن لن يُحفظ بعد إغلاق الصفحة."); return; }
+    try{ assets=await window.claude.use("assets"); }catch(_){ assets=null; }
+    try{ const user=await window.claude.use("user"); if(user&&user.can){ const w=await user.can("data.write"); if(w===false) canWrite=false; } }catch(_){}
+    if(!canWrite) setReadOnly();
+    else if(!assets){ $("#up-note").textContent="رفع الصور متاح لأصحاب صلاحية التحرير فقط. يمكنك حفظ بيانات الزيارة، أما الصور فتظهر مؤقتًا."; $("#up-note").classList.add("show"); }
+
+    const timer=setTimeout(()=>{ ["#plan-note","#up-note"].forEach(s=>{ if(!$(s).classList.contains("show")){ $(s).textContent="تعذّر الوصول إلى البيانات حتى الآن، قد تكون غير محدّثة."; $(s).classList.add("show"); } }); },10000);
+    const clear=()=>{ clearTimeout(timer); };
+    db.doc("meta/info").onSnapshot(s=>{ if(s.exists){ const d=s.data(); Object.entries(metaIds).forEach(([k,sel])=>{ if(document.activeElement!==$(sel)) $(sel).value=d[k]||""; }); } },()=>{});
+    db.collection("plan").onSnapshot(s=>{ if(!s.metadata.fromCache) clear(); plan=s.docs.map(x=>({id:x.id,d:x.data()})); renderPlan(); renderStats(); },
+      err=>{ clear(); if(!plan.length) $("#plan-body").innerHTML='<tr><td colspan="10" class="empty">تعذّر تحميل الخطة.</td></tr>'; });
+    db.collection("visits").onSnapshot(s=>{ if(!s.metadata.fromCache) clear(); visits=s.docs.map(x=>({id:x.id,d:x.data()})); renderGallery(); },
+      err=>{ clear(); if(!visits.length) $("#gallery").innerHTML='<div class="empty">تعذّر تحميل الزيارات.</div>'; });
+  })();
+})();
+</script>
+</body>
+</html>
