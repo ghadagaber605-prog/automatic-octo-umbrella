@@ -5,11 +5,13 @@ items = json.load(open(ids_json))                    # [[id, heading text], ...]
 n = int(re.search(r"Pages:\s+(\d+)", subprocess.run(["pdfinfo", pdf], capture_output=True, text=True).stdout).group(1))
 norm = lambda s: re.sub(r"[اأإآلى]", "", re.sub(r"[^ء-ي0-9]", "", s))
 pages = [norm(subprocess.run(["pdftotext", "-f", str(i), "-l", str(i), pdf, "-"], capture_output=True, text=True).stdout) for i in range(1, n + 1)]
-res, start = {}, 2                                   # skip cover + TOC pages
+hint = norm("اضغطي على أي بند للانتقال إليه")
+res = {}
+start = max([i for i, pg in enumerate(pages) if hint in pg] or [1]) + 1   # first page after the (possibly multi-page) TOC
 for id_, text in items:
-    if id_.startswith("form"):                       # match "…رقم ( N )" only; teacher names extract unreliably
+    if id_.startswith(("form", "web")):                       # match "…رقم ( N )" only; teacher names extract unreliably
         text = text.split("—")[0]
-    key = norm(text)
+    key = norm(text) if id_.startswith(("form", "web")) else norm(text)[:12]   # pdftotext sometimes swaps letters later in a line
     pat = re.compile(re.escape(key) + r"(?!\d)")
     for i in range(start, n):
         m = pat.search(pages[i])

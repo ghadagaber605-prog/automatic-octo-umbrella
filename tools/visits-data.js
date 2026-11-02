@@ -149,5 +149,30 @@ for(const v of rec){const k=v.teacher+v.date+v.type; if(seen.has(k)){dupes++; if
 const TODAY="2026-11-01";
 const all=[...seen.values(),...map].sort((a,b)=>a.date.localeCompare(b.date)||(+a.period||9)-(+b.period||9));
 for(const v of all) v.status=v.done?"تمت":(v.date<TODAY?"لم تُوثّق":"مجدولة");
-module.exports={all,dupes,recCount:rec.length,mapCount:map.length,fixes};
+// last recorded recommendation per teacher (from the two source records)
+const PREV={
+  "منار الصميت":{date:"2026-10-18",src:"زيارة الخارطة",text:"العمل على العروض المرئية حيث إنها عامل مساعد"},
+  "أفراح المنصور":{date:"2026-10-19",src:"زيارة الخارطة",text:"تفعيل الألعاب التعليمية واستراتيجيات تدعم مهارات التفكير وتعزز دور الطالبة داخل الحصة"},
+  "مرام الرشيدي":{date:"2026-09-20",src:"سجل الزيارات",text:"تنوع أساليب التقييم وإدارة الأسئلة"},
+};
+
+// ---- online record (classroom-visits-record.html) export, when present: tools/web-export/{plan,visits}/*.json ----
+const fs=require('fs'), path=require('path');
+const WEB=path.join(__dirname,'web-export');
+let web=null;
+if(fs.existsSync(path.join(WEB,'plan'))){
+  const read=dir=>fs.existsSync(dir)?fs.readdirSync(dir).filter(f=>f.endsWith('.json')).map(f=>({id:f.slice(0,-5),...JSON.parse(fs.readFileSync(path.join(dir,f),'utf8'))})):[];
+  const asOf=(fs.existsSync(path.join(WEB,'exported-at.txt'))?fs.readFileSync(path.join(WEB,'exported-at.txt'),'utf8').trim():new Date().toISOString().slice(0,10));
+  const plan=read(path.join(WEB,'plan')), visits=read(path.join(WEB,'visits'));
+  const rows=plan.map(d=>({id:d.id,date:d.date,teacher:d.teacher,subject:d.subject,cls:d.grade||"",period:d.period||"",type:d.type,src:d.src||"السجل الإلكتروني",
+    done:d.status==="تمت",status:d.status==="مجدولة"&&d.date<asOf?"لم تُوثّق":d.status,visitId:d.visitId}))
+    .sort((a,b)=>a.date.localeCompare(b.date)||(+a.period||9)-(+b.period||9));
+  // latest recommendation per teacher from documented online visits overrides PREV
+  for(const v of [...visits].sort((a,b)=>a.date.localeCompare(b.date))) if(v.notes) PREV[v.teacher]={date:v.date,src:"السجل الإلكتروني",text:v.notes};
+  const assetDir=path.join(WEB,'assets');
+  for(const v of visits) v.photoFiles=(v.photos||[]).map(ph=>{const f=fs.existsSync(assetDir)&&fs.readdirSync(assetDir).find(n=>n.startsWith(ph.id));return f?path.join(assetDir,f):null;}).filter(Boolean);
+  web={asOf,visits:visits.sort((a,b)=>a.date.localeCompare(b.date))};
+  all.length=0; all.push(...rows);
+}
+module.exports={all,dupes,recCount:rec.length,mapCount:map.length,fixes,PREV,web,TODAY:web?web.asOf:TODAY};
 if(require.main===module){const s={};all.forEach(v=>s[v.status]=(s[v.status]||0)+1);console.log(all.length,'rows; dupes removed',dupes,s,'map',map.length,'rec',rec.length);}

@@ -1,5 +1,5 @@
 const fs=require('fs');
-const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,HeadingLevel,PageBreak,VerticalAlign,LevelFormat,TableLayoutType,HeightRule,Header,Footer,PageNumber,Bookmark,InternalHyperlink}=require('docx');
+const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,HeadingLevel,PageBreak,VerticalAlign,LevelFormat,TableLayoutType,HeightRule,ImageRun,Header,Footer,PageNumber,Bookmark,InternalHyperlink}=require('docx');
 let TOCP={};try{TOCP=JSON.parse(fs.readFileSync(__dirname+'/toc-pages.json','utf8'));}catch(e){}
 const SCHOOL="مدارس الرواد — فرع البدائع بنات", YEAR="1448هـ";
 const BRAND="0F5F5C", SOFT="E3F0EE", ACC="B7791F", ACCSOFT="FBF1E1", LINE="BFB9AD";
@@ -7,7 +7,7 @@ const FONT="Arial", W=9638; // A4 text width with 1" margins ≈ 9638? (11906-2*
 const r=(t,o={})=>new TextRun({text:t,rightToLeft:true,font:FONT,size:o.size||24,bold:o.bold,color:o.color});
 const p=(t,o={})=>new Paragraph({bidirectional:true,alignment:o.align||AlignmentType.START,spacing:{after:o.after??120,before:o.before??0},children:Array.isArray(t)?t:[r(t,o)],...(o.extra||{})});
 const bm=(id,kids)=>id?[new Bookmark({id,children:kids})]:kids;
-const h=(num,t,id)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.START,spacing:{before:240,after:160},
+const h=(num,t,id,o={})=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,pageBreakBefore:!!o.newPage,alignment:AlignmentType.START,spacing:{before:240,after:160},
   border:{bottom:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:4}},children:bm(id,[r(num+"  ",{size:34,bold:true,color:ACC}),r(t,{size:34,bold:true,color:BRAND})])});
 const h3=(t,id)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.START,spacing:{before:240,after:100},children:bm(id,[r(t,{size:28,bold:true,color:BRAND})])});
 const bord={style:BorderStyle.SINGLE,size:4,color:LINE};
@@ -31,17 +31,22 @@ const day=d=>DAYS[new Date(d+"T00:00:00Z").getUTCDay()];
 const HF=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
 const hij=d=>HF.format(new Date(d+"T00:00:00Z")).replace(" هـ","هـ");          // 21 جمادى الأولى 1448هـ
 const hijS=d=>hij(d).replace(/ ?\d{4}هـ$/,"");                                      // 21 جمادى الأولى
-const TODAY="2026-11-01";
+const TODAY=V.TODAY;
 const greg=d=>`${fmt(d)} ${d.slice(0,4)}م`;
 // one form per teacher: her next upcoming visit (from today), else her most recent one
+// item 9: a form for every upcoming (scheduled) visit; each form knows the same teacher's previous form
+let _forms=null;
 function formVisits(){
-  const by=new Map();
-  for(const v of V.all){(by.get(v.teacher)||by.set(v.teacher,[]).get(v.teacher)).push(v);}
-  const pick=[...by.values()].map(vs=>vs.find(v=>v.date>="2026-11-01")||vs[vs.length-1]);
-  return pick.sort((a,b)=>a.date.localeCompare(b.date)||(+a.period||9)-(+b.period||9));
+  if(_forms) return _forms;
+  _forms=V.all.filter(v=>v.status==="مجدولة").map(v=>({...v}));
+  const last={};
+  _forms.forEach((v,i)=>{ if(last[v.teacher]!=null) v.prevForm={n:last[v.teacher]+1,date:_forms[last[v.teacher]].date}; last[v.teacher]=i; });
+  return _forms;
 }
 
-const stageOf=c=>/روضة|المستوى|تمهيدي/.test(c)?"رياض الأطفال":/ثنائي/.test(c)?"ابتدائي (ثنائي اللغة)":/ث$|ثانوي/.test(c)?"ثانوي":/م$|متوسط$|^\S+ متوسط/.test(c)&&!/\//.test(c)?"متوسط":/\//.test(c)?"متوسط / ثانوي":/ب$|ابتدائي|^(أول|ثاني|ثالث|رابع|خامس|سادس)$/.test(c)?"ابتدائي":"غير محدد";
+const {stageOf,CLASS,SUPPORT,RANK,clsList,topClass,clsFor,isSupport}=require('./classes.js');
+const CLS_COLOR=c=>isSupport(c)?"A83232":c==="معلمة متميزة"?"2F7D46":"5B6675";
+const CLS_MARK=c=>isSupport(c)?"● ":c==="معلمة متميزة"?"★ ":"";
 function kpiRow(items){
   const w=Math.floor(9638/items.length), cols=items.map((_,i)=>i<items.length-1?w:9638-w*(items.length-1));
   return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,
@@ -129,25 +134,6 @@ function visitsTable(){
 }
 
 const sp=()=>p("",{after:60});
-// teacher classification — Google Sheet «سجل التدريب والنمو المهني 1448هـ» › تصنيف المعلمات (per stage)
-const CLASS={
-  "نوف المطيري":{"ابتدائي":"معلمة جديدة"}, "شهد المطيري":{"ابتدائي":"معلمة جديدة"},
-  "عبير البريدي":{"ابتدائي":"معلمة متميزة","متوسط":"معلمة خبرة"}, "ورود البطيح":{"ابتدائي":"معلمة خبرة"},
-  "ريم الحميميدي":{"ابتدائي":"قابلة للتطوير"}, "الهام البلتاجي":{"ابتدائي":"معلمة متطورة"},
-  "أفراح المنصور":{"ابتدائي":"معلمة متميزة","متوسط":"معلمة خبرة"}, "رنا الحربي":{"ابتدائي":"معلمة متميزة"},
-  "مشاعل الشويعي":{"ابتدائي":"معلمة متميزة","ثانوي":"معلمة خبرة"}, "منار الصميت":{"ابتدائي":"معلمة متميزة"},
-  "ذكرى الوهبي":{"ابتدائي":"معلمة متميزة"}, "مرام الرشيدي":{"متوسط":"قابلة للتطوير","ثانوي":"أولى بالرعاية"},
-  "سجى القرناس":{"متوسط":"معلمة متطورة","ثانوي":"أولى بالرعاية"}, "ريدا الفريح":{"متوسط":"معلمة متميزة","ثانوي":"معلمة خبرة"},
-  "رغد العريني":{"متوسط":"معلمة متميزة","ثانوي":"معلمة خبرة"}, "فاطمة الحربي":{"متوسط":"معلمة متطورة","ثانوي":"معلمة خبرة"},
-  "مرام الصالحي":{"متوسط":"معلمة خبرة","ثانوي":"معلمة خبرة"}, "الاء النفيسة":{"متوسط":"معلمة خبرة"},
-};
-const SUPPORT=["أولى بالرعاية","معلمة جديدة","قابلة للتطوير"], RANK=[...SUPPORT,"معلمة متطورة","معلمة خبرة","معلمة متميزة"];
-const clsList=t=>Object.values(CLASS[t]||{});
-const topClass=t=>{const l=clsList(t);return l.length?l.sort((a,b)=>RANK.indexOf(a)-RANK.indexOf(b))[0]:"غير مصنفة";};
-const clsFor=v=>{const c=CLASS[v.teacher]||{};const st=stageOf(v.cls);return c[st]||(st==="متوسط / ثانوي"?(c["ثانوي"]||c["متوسط"]):null)||topClass(v.teacher);};
-const isSupport=c=>SUPPORT.includes(c);
-const CLS_COLOR=c=>isSupport(c)?"A83232":c==="معلمة متميزة"?"2F7D46":"5B6675";
-const CLS_MARK=c=>isSupport(c)?"● ":c==="معلمة متميزة"?"★ ":"";
 // suggested exchange-visit pairs: support teacher visits a distinguished teacher of the same subject & stage
 const PAIRS=[
   ["نوف المطيري","معلمة جديدة","أفراح المنصور","اللغة العربية — ابتدائي"],
@@ -161,7 +147,9 @@ let TOCITEMS=[];
 // Table of contents: page numbers come from tools/toc-pages.json (filled by build.sh after a first render)
 function tocPage(){
   const items=TOCITEMS=[["sec1","١. أهداف السجل",0],["sec2","٢. خطة الزيارات الصفية",0],["sum","ملخص الإنجاز ومقارنته بالمستهدف",1],["tbl","جدول الزيارات",1],["sec3","٣. توثيق الزيارات بالصور",0],
-    ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])];
+    ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
+    ["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
+    ...((V.web&&V.web.visits)||[]).map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])];
   const cols=[8238,1400], nb={style:BorderStyle.NONE,size:0,color:"FFFFFF"}, dot={style:BorderStyle.DOTTED,size:4,color:LINE};
   const rows=items.map(([id,t,lvl])=>new TableRow({cantSplit:true,children:[
     new TableCell({width:{size:cols[0],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80+lvl*360},
@@ -181,7 +169,6 @@ const cover=[
   table([3000,6638],[["اسم المدرسة",SCHOOL],["العام الدراسي",YEAR+" — الفصل الدراسي الأول"],["الزائرة","أ. غادة جابر — المشرفة التربوية"],["تاريخ بدء السجل",`${day(V.all[0].date)} ${greg(V.all[0].date)} — ${hij(V.all[0].date)}`],["آخر تحديث",`${greg(TODAY)} — ${hij(TODAY)}`],["عدد المعلمات / الزيارات",`${new Set(V.all.map(v=>v.teacher)).size} معلمة · ${V.all.length} زيارة`]],{header:false,h:600,labels:true}),
   new Paragraph({children:[new PageBreak()]}),
   ...tocPage(),
-  new Paragraph({children:[new PageBreak()]}),
 ];
 
 // 1 Goals
@@ -193,7 +180,7 @@ const goals=[["تحسين جودة التعليم","متابعة الأداء ا
 ["تحقيق العدالة والشمول","ضمان زيارة جميع المعلمين وجميع المواد والصفوف وفق خطة زمنية متوازنة."],
 ["دعم التخطيط للتطوير المهني","بناء البرامج التدريبية والورش على احتياجات فعلية مستخلصة من الزيارات."],
 ["تعزيز التواصل البنّاء","ترسيخ ثقافة التغذية الراجعة الإيجابية والشراكة بين الإدارة والمعلمين."]];
-const sec1=[h("١","أهداف السجل","sec1"),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
+const sec1=[h("١","أهداف السجل","sec1",{newPage:true}),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
   table([700,2800,6138],[["م","الهدف","التوضيح"],...goals.map((g,i)=>[{...cell,opts:{}}&&String(i+1),g[0],g[1]])].map((row,i)=>i===0?row:row.map((c,j)=>j===1?p(c,{after:0,bold:true,size:22}):c)))];
 
 // 2 Plan
@@ -248,15 +235,11 @@ function obsCard(){
   return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,total]});
 }
 
-// last recorded recommendation per teacher (from the two source records)
-const PREV={
-  "منار الصميت":{date:"2026-10-18",src:"زيارة الخارطة",text:"العمل على العروض المرئية حيث إنها عامل مساعد"},
-  "أفراح المنصور":{date:"2026-10-19",src:"زيارة الخارطة",text:"تفعيل الألعاب التعليمية واستراتيجيات تدعم مهارات التفكير وتعزز دور الطالبة داخل الحصة"},
-  "مرام الرشيدي":{date:"2026-09-20",src:"سجل الزيارات",text:"تنوع أساليب التقييم وإدارة الأسئلة"},
-};
-function followUp(t){
+const PREV=V.PREV;
+function followUp(t,prevForm){
   const pr=PREV[t];
-  const recCell=pr?[p(pr.text,{after:0,size:18,bold:true}),p(`(${pr.src} — ${fmt(pr.date)} / ${hijS(pr.date)})`,{after:0,size:15,color:"5B6675"})]
+  const recCell=prevForm?[p(`التوصية المكتوبة في النموذج رقم ( ${prevForm.n} ) لهذه المعلمة — ${fmt(prevForm.date)} / ${hijS(prevForm.date)}`,{after:0,size:18,bold:true}),p("تُنقل هنا من خانة «التوصيات» في ذلك النموذج: ...........................................",{after:0,size:16,color:"5B6675"})]
+    :pr?[p(pr.text,{after:0,size:18,bold:true}),p(`(${pr.src} — ${fmt(pr.date)} / ${hijS(pr.date)})`,{after:0,size:15,color:"5B6675"})]
                   :[p("لا توجد توصية مسجلة في السجل — تُكتب هنا إن وُجدت: ...........................................",{after:0,size:17,color:"5B6675"})];
   const cols=[2400,7238];
   const lab=t=>cell(p(t,{after:0,size:20,bold:true,color:BRAND}),cols[0],{fill:SOFT});
@@ -274,7 +257,7 @@ function visitPage(n,v){
       ["الحصة",v.period||"","نوع الزيارة",v.type||"☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
       ["عنوان الدرس","","التقدير العام","☐ متميز ☐ متقدم ☐ متوسط ☐ يحتاج دعمًا"]],{header:false,h:440,labels:true}),
     h3("متابعة توصية الزيارة السابقة"),
-    followUp(v.teacher),
+    followUp(v.teacher,v.prevForm),
     h3("بطاقة الملاحظة الصفية"),
     obsCard(),
     h3("صور الزيارة"),
@@ -289,8 +272,48 @@ function visitPage(n,v){
 // shade label cells in visit info tables: post-process not needed; keep simple.
 const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور","sec3"),
   p("لكل زيارة صفحة مستقلة: املأ بياناتها، ثم أدرج صور الزيارة داخل المربعات (إدراج ← صورة) أو الصقها مباشرة، ثم اكتب نقاط القوة والتوصيات ووقّع. ولإضافة زيارة جديدة انسخ صفحة نموذج والصقها في نهاية السجل.",{color:"5B6675",size:20}),
-  p("وُزّعت النماذج على المعلمات: نموذج لكل معلمة مُعبّأ ببيانات زيارتها القادمة في جدول الزيارات، ومرتبة حسب تاريخ الزيارة.",{color:"5B6675",size:20}),
+  p(`نموذج لكل زيارة مجدولة قادمة (${formVisits().length} نموذجًا لـ ${new Set(formVisits().map(v=>v.teacher)).size} معلمة)، مُعبّأ ببياناتها من جدول الزيارات ومرتب حسب التاريخ. الزيارة الثانية فما بعد للمعلمة نفسها تحيل في «متابعة التوصية السابقة» إلى نموذجها السابق.`,{color:"5B6675",size:20}),
   ...formVisits().flatMap((v,i)=>visitPage(i+1,v))];
+
+// item 13: visits documented in the online record (photos embedded when exported to tools/web-export/assets)
+const AX_KEYS=[["plan","التخطيط للدرس"],["delivery","تنفيذ الدرس"],["interaction","التفاعل الصفي"],["management","إدارة الصف"],["assessment","التقويم"]];
+const LEVEL=["","يحتاج دعمًا","متوسط","متقدم","متميز"];
+function imgRun(file,w){
+  const buf=fs.readFileSync(file), ext=file.split('.').pop().toLowerCase();
+  let iw=4,ih=3; try{ if(ext==="png"){iw=buf.readUInt32BE(16);ih=buf.readUInt32BE(20);} else { for(let i=2;i<buf.length;){ if(buf[i]!==0xFF){i++;continue;} const m=buf[i+1]; if(m>=0xC0&&m<=0xC3){ih=buf.readUInt16BE(i+5);iw=buf.readUInt16BE(i+7);break;} i+=2+buf.readUInt16BE(i+2);} } }catch(e){}
+  return new ImageRun({type:ext==="png"?"png":ext==="gif"?"gif":"jpg",data:buf,transformation:{width:w,height:Math.round(w*ih/iw)}});
+}
+function webVisitBlock(v,i){
+  const sc=v.scores||{}, tot=Object.values(sc).reduce((a,b)=>a+b,0), n=Object.keys(sc).length;
+  const out=[ ...(i?[new Paragraph({children:[new PageBreak()]})]:[]),
+    h3(`زيارة موثقة ( ${i+1} )  —  ${v.teacher}`,"web"+(i+1)),
+    table([2400,2419,2400,2419],[
+      ["تاريخ الزيارة",[p(`${day(v.date)} ${greg(v.date)}`,{after:0,size:20}),p(hij(v.date),{after:0,size:17,color:"5B6675"})],"اسم المعلمة",v.teacher||""],
+      ["المادة",v.subject||"","الصف / الفصل",v.grade||""],
+      ["الحصة",v.period||"","نوع الزيارة",v.type||""],
+      ["عنوان الدرس",v.lesson||"","التقدير العام",v.rating?LEVEL[v.rating]:"—"]],{header:false,h:440,labels:true}),
+    h3("بطاقة الملاحظة الصفية"),
+    table([3400,1600,4638],[["المحور","الدرجة (من ٤)","المستوى"],...AX_KEYS.map(([k,a])=>[a,sc[k]?String(sc[k]):"—",sc[k]?LEVEL[sc[k]]:"—"]),
+      ["المجموع",n?`${tot} / ٢٠`:"—",n===5?LEVEL[tot>=18?4:tot>=14?3:tot>=10?2:1]:"لم تكتمل المحاور"]]),
+    h3("متابعة توصية الزيارة السابقة"),
+    table([2400,7238],[["التوصية السابقة",v.prevRec?`${v.prevRec.text} (${fmt(v.prevRec.date)})`:"لا توجد"],["مستوى التنفيذ",v.followUp||"—"]],{header:false,labels:true}),
+    table([4819,4819],[["نقاط القوة","التوصيات"],[v.strengths||"—",v.notes||"—"]]),
+  ];
+  if((v.photos||[]).length){
+    out.push(h3(`صور الزيارة (${v.photos.length})`));
+    if(v.photoFiles.length){
+      const rows=[]; for(let k=0;k<v.photoFiles.length;k+=2) rows.push(new TableRow({children:[0,1].map(j=>new TableCell({width:{size:4819,type:WidthType.DXA},borders,margins:{top:60,bottom:60,left:60,right:60},
+        children:[new Paragraph({alignment:AlignmentType.CENTER,children:v.photoFiles[k+j]?[imgRun(v.photoFiles[k+j],300)]:[]})]}))}));
+      out.push(new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:[4819,4819],layout:TableLayoutType.FIXED,rows}));
+    } else out.push(p("الصور محفوظة في السجل الإلكتروني ولم تُنزَّل مع هذا التصدير.",{size:18,color:"5B6675"}));
+  }
+  return out;
+}
+const webVisits=(V.web&&V.web.visits)||[];
+const sec4=[new Paragraph({children:[new PageBreak()]}),h("٤","الزيارات الموثقة في السجل الإلكتروني","sec4"),
+  p(V.web?`مصدرها صفحة «سجل الزيارات الصفية» الإلكترونية — تصدير ${greg(V.web.asOf)} الموافق ${hij(V.web.asOf)}. تُوثَّق الزيارة من الجوال (البيانات وبطاقة الملاحظة والصور) فتظهر هنا عند إعادة بناء الملف.`
+    :"لم يُصدَّر السجل الإلكتروني بعد. تُوثَّق الزيارات من الجوال في صفحة «سجل الزيارات الصفية» الإلكترونية، ثم يُعاد بناء هذا الملف فتظهر هنا ببطاقاتها وصورها.",{color:"5B6675",size:20}),
+  ...(webVisits.length?webVisits.flatMap((v,i)=>webVisitBlock(v,i)):[p("لا توجد زيارات موثقة إلكترونيًا حتى تاريخ التصدير.",{size:20,bold:true,color:ACC,before:200})])];
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{titlePage:true,page:{margin:{top:1300,bottom:1134,left:1134,right:1134,header:560,footer:500}}},
@@ -299,7 +322,7 @@ const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightT
       children:[r(SCHOOL,{size:17,bold:true,color:BRAND}),r("   ·   سجل الزيارات الصفية   ·   العام الدراسي "+YEAR,{size:17,color:"5B6675"})]})]})},
     footers:{first:new Footer({children:[p("",{after:0})]}),default:new Footer({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
       children:[new TextRun({rightToLeft:true,font:FONT,size:18,color:"5B6675",children:["صفحة ",PageNumber.CURRENT," من ",PageNumber.TOTAL_PAGES]})]})]})},
-    children:[...cover,...sec1,...sec2,...sec3]}]});
+    children:[...cover,...sec1,...sec2,...sec3,...sec4]}]});
 const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
-if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):t.replace(/^[١٢٣]\. /,'')]),null,0));process.exit(0);}
+if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):t.replace(/^[١٢٣٤]\. /,'')]),null,0));process.exit(0);}
 Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});
