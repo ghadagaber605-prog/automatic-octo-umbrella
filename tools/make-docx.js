@@ -160,7 +160,7 @@ function tocPage(){
     ...(HAS_WEB?[["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
       ...V.web.visits.map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])]:[]),
     ["sec5",`${N_APP}. ملاحق: نماذج الزيارات`,0],
-    ["qr","رموز QR: نماذج من الزيارات الصفية (Drive) والسجل الإلكتروني",1],
+    ["qr","رموز QR: نماذج الزيارات (Drive)، السجل الإلكتروني، سجل زيارات الخارطة",1],
     ["app1","أ) استمارة زيارة معلمة — الإشراف التربوي (ع-7-004)",1],
     ...PAIRS.map((pr,i)=>["app2_"+(i+1),`ب) استمارة تبادل الزيارات ( ${i+1} ) — ${pr[0]} ← ${pr[2]}`,1]),
     ["approve",`${N_OK}. اعتماد السجل`,0]];
@@ -398,12 +398,13 @@ function exchangeForm(n,pair){
 }
 // QR codes (tools/make_qr.py) — scan with the phone camera
 const QRS=[["qr/drive-scans.png","نماذج من الزيارات الصفية","ملف PDF في Google Drive (مجلد «نماذج من الزيارات الصفية»): نماذج الزيارات الصفية الموثقة.","drive.google.com/file/d/1WjgzUbZeUlBK_Fe1ssH2GcbwU8fU4-rI"],
-  ["qr/online-record.png","السجل الإلكتروني للزيارات","لتوثيق الزيارة من الجوال: البيانات وبطاقة الملاحظة والصور، وتحديث حالة الزيارة في الخطة.","claude.ai/artifact/AHA38L1VWBLSnAzs1ym7fx"]];
+  ["qr/online-record.png","السجل الإلكتروني للزيارات","لتوثيق الزيارة من الجوال: البيانات وبطاقة الملاحظة والصور، وتحديث حالة الزيارة في الخطة.","claude.ai/artifact/AHA38L1VWBLSnAzs1ym7fx"],
+  ["qr/map-record.png","سجل زيارات خارطة التعليم والتعلم","جدولة زيارات الدروس المصممة وفق الخارطة وتسجيلها، وربط إجراءات المعلمة بنواتج تعلم الطالبات.","claude.ai/artifact/Ee1QvMzVoMtJXmLdKnBwR5"]];
 function qrPanel(){
-  const cols=[4819,4819];
+  const cols=[3212,3213,3213];
   return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[new TableRow({cantSplit:true,children:QRS.map(([f,t,d,u])=>
     new TableCell({width:{size:cols[0],type:WidthType.DXA},borders,margins:{top:160,bottom:160,left:160,right:160},verticalAlign:VerticalAlign.TOP,children:[
-      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:80},children:[imgRun(__dirname+"/"+f,190)]}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:80},children:[imgRun(__dirname+"/"+f,170)]}),
       p(t,{after:40,size:22,bold:true,color:BRAND,align:AlignmentType.CENTER}),
       p(d,{after:40,size:17,color:"5B6675",align:AlignmentType.CENTER}),
       new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:u,font:FONT,size:14,color:"5B6675"})]})]}))})]});
