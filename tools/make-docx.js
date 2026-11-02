@@ -143,20 +143,29 @@ const PAIRS=[
   ["مرام الرشيدي","أولى بالرعاية (ثانوي) / قابلة للتطوير (متوسط)","رغد العريني","العلوم — متوسط"],
 ];
 
+// Observation card aligned to ETEC «التعليم والتعلم» standards (هيئة تقويم التعليم والتدريب — إطار التقويم المدرسي)
+const STD=[["env","تهيئة بيئة التعلم","بيئة صفية آمنة ومحفزة، انضباط إيجابي، استثمار زمن التعلم، توظيف مصادر التعلم والتقنية"],
+  ["build","بناء خبرات التعلم","وضوح نواتج التعلم المستهدفة، استراتيجيات التعلم النشط، مهارات التفكير العليا، التمايز ومراعاة الفروق، مشاركة الطالبات"],
+  ["assess","تقويم التعلم","تقويم تكويني مستمر، تغذية راجعة فورية، تنوع أدوات التقويم، التحقق من تحقق ناتج الدرس"],
+  ["prof","التطوير المهني","تنفيذ التوصيات السابقة، توظيف ما اكتسبته في التدريب ومجتمعات التعلم، التمكن العلمي وسلامة اللغة"]];
+const BANDS="١٥–١٦ متميز · ١٢–١٤ متقدم · ٨–١١ متوسط · أقل من ٨ يحتاج دعمًا";
+const HAS_WEB=!!(V.web&&V.web.visits&&V.web.visits.length);
+const N_APP=HAS_WEB?"٥":"٤", N_OK=HAS_WEB?"٦":"٥";
 let TOCITEMS=[];
 // Table of contents: page numbers come from tools/toc-pages.json (filled by build.sh after a first render)
 function tocPage(){
-  const items=TOCITEMS=[["sec1","١. أهداف السجل",0],["sec2","٢. خطة الزيارات الصفية",0],["sum","ملخص الإنجاز ومقارنته بالمستهدف",1],["tbl","جدول الزيارات",1],["sec3","٣. توثيق الزيارات بالصور",0],
-    ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
-    ["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
-    ...((V.web&&V.web.visits)||[]).map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
-    ["sec5","٥. ملاحق: نماذج الزيارات",0],
+  const items=TOCITEMS=[["sec1","١. أهداف السجل",0],["etec","ربط السجل بمعايير التقويم المدرسي",1],["sec2","٢. خطة الزيارات الصفية",0],["sum","ملخص الإنجاز ومقارنته بالمستهدف",1],["tbl","جدول الزيارات",1],["sec3","٣. توثيق الزيارات بالصور",0],
+    ["formidx",`فهرس النماذج حسب المعلمة — ${formVisits().length} نموذجًا (ص ${TOCP.form1||"…"}–${TOCP["form"+formVisits().length]||"…"})`,1],
+    ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}`,9]),
+    ...(HAS_WEB?[["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
+      ...V.web.visits.map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])]:[]),
+    ["sec5",`${N_APP}. ملاحق: نماذج الزيارات`,0],
     ["qr","رموز QR: نماذج من الزيارات الصفية (Drive) والسجل الإلكتروني",1],
     ["app1","أ) استمارة زيارة معلمة — الإشراف التربوي (ع-7-004)",1],
     ...PAIRS.map((pr,i)=>["app2_"+(i+1),`ب) استمارة تبادل الزيارات ( ${i+1} ) — ${pr[0]} ← ${pr[2]}`,1]),
-    ["app2_"+(PAIRS.length+1),"ب) استمارة تبادل الزيارات — نسخة فارغة",1]];
+    ["approve",`${N_OK}. اعتماد السجل`,0]];
   const cols=[8238,1400], nb={style:BorderStyle.NONE,size:0,color:"FFFFFF"}, dot={style:BorderStyle.DOTTED,size:4,color:LINE};
-  const rows=items.map(([id,t,lvl])=>new TableRow({cantSplit:true,children:[
+  const rows=items.filter(([,,lvl])=>lvl<9).map(([id,t,lvl])=>new TableRow({cantSplit:true,children:[
     new TableCell({width:{size:cols[0],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80+lvl*360},
       children:[p([new InternalHyperlink({anchor:id,children:[r(t,{size:lvl===0?24:lvl===1?21:19,bold:lvl===0,color:lvl===0?BRAND:undefined})]})],{after:0})]}),
     new TableCell({width:{size:cols[1],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80},
@@ -177,38 +186,49 @@ const cover=[
 ];
 
 // 1 Goals
-const goals=[["تحسين جودة التعليم","متابعة الأداء التدريسي داخل الصف ودعمه بما ينعكس على تعلم الطلاب."],
-["تشخيص الاحتياجات المهنية","التعرف على نقاط القوة وفرص التحسين لدى كل معلم بدقة وموضوعية."],
-["التوثيق المنظم","حفظ بيانات الزيارات ونتائجها وشواهدها المصورة في مرجع واحد يسهل الرجوع إليه."],
+const goals=[["تحسين جودة التعليم والتعلم","متابعة الممارسات التدريسية داخل الصف ودعمها بما ينعكس على نواتج تعلم الطالبات."],
+["تشخيص الاحتياجات المهنية","التعرف على نقاط القوة وفرص التحسين لدى كل معلمة بدقة وموضوعية، وفق بطاقة ملاحظة موحدة."],
+["قياس نواتج التعلم","رصد نسبة تحقق ناتج الدرس في كل زيارة وربطه بممارسات المعلمة."],
+["التوثيق المنظم بالشواهد","حفظ بيانات الزيارات ونتائجها وشواهدها المصورة في مرجع واحد يسهل الرجوع إليه."],
 ["متابعة تنفيذ التوصيات","رصد مدى تطبيق التوصيات السابقة وقياس أثرها في الزيارات اللاحقة."],
-["نشر الممارسات المتميزة","رصد الاستراتيجيات الناجحة وتعميمها عبر الزيارات التبادلية ومجتمعات التعلم."],
-["تحقيق العدالة والشمول","ضمان زيارة جميع المعلمين وجميع المواد والصفوف وفق خطة زمنية متوازنة."],
-["دعم التخطيط للتطوير المهني","بناء البرامج التدريبية والورش على احتياجات فعلية مستخلصة من الزيارات."],
-["تعزيز التواصل البنّاء","ترسيخ ثقافة التغذية الراجعة الإيجابية والشراكة بين الإدارة والمعلمين."]];
+["نشر الممارسات المتميزة","تعميم الاستراتيجيات الناجحة عبر الزيارات التبادلية ومجتمعات التعلم المهنية."],
+["العدالة والشمول","زيارة جميع المعلمات في جميع المراحل والمواد وفق خطة زمنية متوازنة، مع أولوية لفئة الدعم."],
+["دعم التطوير المهني","بناء البرامج التدريبية على احتياجات فعلية مستخلصة من الزيارات."],
+["دعم التقويم المدرسي","توفير شواهد مجال «التعليم والتعلم» و«نواتج التعلم» للتقويم الذاتي والخارجي وفق إطار هيئة تقويم التعليم والتدريب."]];
+const ETECMAP=[["التعليم والتعلم","تهيئة بيئة التعلم","بطاقة الملاحظة (المعيار ١) + صور الزيارة","القسم ٣"],
+  ["التعليم والتعلم","بناء خبرات التعلم","بطاقة الملاحظة (المعيار ٢) + شاهد كل مؤشر","القسم ٣"],
+  ["التعليم والتعلم","تقويم التعلم","بطاقة الملاحظة (المعيار ٣) + أداة قياس ناتج الدرس","القسم ٣"],
+  ["التعليم والتعلم","التطوير المهني","متابعة تنفيذ التوصية السابقة + الزيارات التبادلية + تصنيف المعلمات","الأقسام ٢ و٣ والملاحق"],
+  ["نواتج التعلم","تحقق نواتج التعلم","نسبة الطالبات المحققات لناتج الدرس في كل زيارة","القسم ٣"],
+  ["القيادة المدرسية","المتابعة والتحسين","خطة الزيارات، ملخص الإنجاز مقارنة بالمستهدف، أولويات الدعم، اعتماد السجل","القسم ٢ وصفحة الاعتماد"]];
 const sec1=[h("١","أهداف السجل","sec1",{newPage:true}),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
-  table([700,2800,6138],[["م","الهدف","التوضيح"],...goals.map((g,i)=>[{...cell,opts:{}}&&String(i+1),g[0],g[1]])].map((row,i)=>i===0?row:row.map((c,j)=>j===1?p(c,{after:0,bold:true,size:22}):c)))];
+  table([700,2800,6138],[["م","الهدف","التوضيح"],...goals.map((g,i)=>[String(i+1),p(g[0],{after:0,bold:true,size:22}),g[1]])]),
+  h3("ربط السجل بمعايير التقويم المدرسي","etec"),
+  p("يوضح الجدول أين يجد فريق التقويم الذاتي أو الخارجي شواهد كل معيار في هذا السجل:",{size:18,color:"5B6675"}),
+  table([1900,2300,3638,1800],[["المجال","المعيار","الشاهد في السجل","موضعه"],...ETECMAP]),
+  p("المرجع: إطار التقويم المدرسي لهيئة تقويم التعليم والتدريب، مجالاته الأربعة: القيادة المدرسية، التعليم والتعلم، نواتج التعلم، البيئة المدرسية. يُستحسن مطابقة صياغة المعايير مع آخر إصدار رسمي على منصة الهيئة.",{size:16,color:"5B6675",before:60}),
+  p("سرية البيانات: يحتوي السجل على تقييمات مهنية لمعلمات بأسمائهن، ويُطلع عليه المعنيات فقط (المعلمة، المشرفة، قائدة المدرسة، فريق التقويم).",{size:16,color:"A83232",before:40})];
 
 // 2 Plan
 const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزيارات الصفية","sec2"),
   h3("أنواع الزيارات الصفية"),
-  table([2000,4838,2800],[["نوع الزيارة","الهدف منها","العدد المقترح لكل معلم"],
-   ["استطلاعية","التعرف على المعلم وبيئة الصف وتحديد الاحتياجات الأولية","زيارة واحدة بداية العام"],
-   ["تقويمية","تقويم الأداء التدريسي وفق بطاقة الملاحظة المعتمدة","زيارتان (زيارة في كل فصل)"],
-   ["متابعة / علاجية","التحقق من تنفيذ التوصيات السابقة وتقديم الدعم اللازم","حسب الحاجة"],
-   ["تبادلية","تبادل الخبرات بين المعلمين ونقل الممارسات المتميزة","زيارة واحدة على الأقل كل فصل"]]),
+  table([2000,4838,2800],[["نوع الزيارة","الهدف منها","العدد / التواتر"],
+   ["روتينية","متابعة صفية منتظمة وفق بطاقة الملاحظة لرصد الممارسات وتحديد الاحتياج (برنامج «المتابعة الصفية المنتظمة»)","3 زيارات يوميًا — 57 زيارة شهريًا"],
+   ["متابعة","التحقق من تنفيذ التوصيات السابقة وتقديم الدعم، وتُكثَّف لفئة الدعم","خلال أسبوعين من الزيارة السابقة"],
+   ["خارطة التعليم والتعلم","حضور درس مصمم وفق الخارطة لربط إجراءات المعلمة بنواتج تعلم الطالبات","زيارة لكل معلمة في الفصل"],
+   ["تبادلية","زيارة معلمة لزميلتها المتميزة في المادة نفسها لنقل الممارسات","زيارة على الأقل لكل معلمة من فئة الدعم"]]),
   h3("المراحل الزمنية للخطة"),
   table([2000,2400,5238],[["الفترة","المرحلة","الإجراءات"],
-   ["الأسابيع ١ – ٤","مرحلة الاستطلاع","زيارات استطلاعية لجميع المعلمين، مع إعطاء الأولوية للمعلمين الجدد، وتحديد الاحتياجات التدريبية."],
+   ["الأسابيع ١ – ٤","مرحلة الاستطلاع","زيارات استطلاعية لجميع المعلمات مع إعطاء الأولوية للمستجدات، وتحديد الاحتياجات التدريبية."],
    ["الأسابيع ٥ – ١٢","مرحلة التقويم الأولى","زيارات تقويمية وفق البطاقة المعتمدة، واجتماع فردي بعد كل زيارة، وكتابة التوصيات والاتفاق عليها."],
-   ["الأسابيع ١٣ – ٢٠","مرحلة المتابعة والتبادل","زيارات متابعة لتنفيذ التوصيات، وزيارات تبادلية بين المعلمين، وورش لنشر الممارسات."],
+   ["الأسابيع ١٣ – ٢٠","مرحلة المتابعة والتبادل","زيارات متابعة لتنفيذ التوصيات، وزيارات تبادلية بين المعلمات، وورش لنشر الممارسات."],
    ["نهاية العام","مرحلة التقويم الختامي","زيارات تقويمية ختامية، وقياس أثر الدعم المقدّم، وتقرير ختامي وتوصيات للعام القادم."]]),
-  h3("محاور الملاحظة أثناء الزيارة"),
-  table([3000,6638],[["المحور","أبرز المؤشرات"],
-   ["التخطيط للدرس","وضوح الأهداف، ملاءمة الأنشطة، تنوّع مصادر التعلم"],
-   ["تنفيذ الدرس","التهيئة، تنوع الاستراتيجيات، توظيف التقنية، إدارة الوقت"],
-   ["إدارة الصف","البيئة الصفية الآمنة، الانضباط، تفاعل الطلاب ومشاركتهم"],
-   ["التقويم","التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية"],
-   ["السمات الشخصية والمهنية","سلامة اللغة، التمكن العلمي، العلاقة مع الطلاب"]]),
+  h3("معايير الملاحظة الصفية (مجال التعليم والتعلم)"),
+  p("بطاقة الملاحظة في السجل مبنية على المعايير الأربعة لمجال «التعليم والتعلم» في إطار التقويم المدرسي لهيئة تقويم التعليم والتدريب، مع رصد نواتج التعلم في كل زيارة:",{size:18,color:"5B6675"}),
+  table([2300,4638,2700],[["المعيار","المؤشرات المرصودة في الزيارة","الشواهد المطلوبة"],
+   ...STD.map(([k,a,ind])=>[a,ind,{env:"صور البيئة الصفية، جدول الحصة، مصادر التعلم المستخدمة",build:"خطة الدرس، أوراق العمل والمهام، صور أنشطة الطالبات",assess:"أدوات التقويم، تذاكر الخروج، نماذج من أعمال الطالبات المصححة",prof:"خطة النمو الفردية، شهادات التدريب، تنفيذ توصيات الزيارة السابقة"}[k]]),
+   ["نواتج التعلم (مجال مستقل)","نسبة الطالبات المحققات لناتج الدرس، وتقدمهن بين الزيارات","تحليل تذاكر الخروج أو السؤال الختامي، نتائج الاختبارات القصيرة"]]),
+  p("مستويات الأداء: ٤ متميز · ٣ متقدم · ٢ متوسط · ١ يحتاج دعمًا. "+BANDS+" (المجموع من ١٦).",{size:17,color:"5B6675",before:60}),
   new Paragraph({children:[new PageBreak()]}),
   ...summaryPage(),
   new Paragraph({children:[new PageBreak()]}),
@@ -223,21 +243,18 @@ const photoBox=(label)=>new TableCell({width:{size:4819,type:WidthType.DXA},bord
   shading:{type:ShadingType.CLEAR,color:"auto",fill:SOFT},verticalAlign:VerticalAlign.CENTER,
   children:[p("📷",{align:AlignmentType.CENTER,size:32,after:20}),p(label,{align:AlignmentType.CENTER,size:22,color:BRAND,bold:true,after:0}),p("(إدراج ← صورة)",{align:AlignmentType.CENTER,size:18,color:"5B6675",after:0})]});
 
-const AXES=[["التخطيط للدرس","وضوح الأهداف، ملاءمة الأنشطة للأهداف، تنوع مصادر التعلم"],
-  ["تنفيذ الدرس","التهيئة، تنوع الاستراتيجيات، توظيف التقنية، إدارة زمن الحصة"],
-  ["التفاعل الصفي","مشاركة الطالبات، الأسئلة المحفزة للتفكير، العمل التعاوني"],
-  ["إدارة الصف","البيئة الآمنة، الانضباط الإيجابي، تنظيم الانتقال بين الأنشطة"],
-  ["التقويم","التقويم التكويني، التغذية الراجعة، مراعاة الفروق الفردية، تذكرة الخروج"]];
 function obsCard(){
-  const cols=[1700,3938,1000,1000,1000,1000];
-  const hdr=new TableRow({tableHeader:true,children:["المحور","المؤشرات","٤ متميز","٣ متقدم","٢ متوسط","١ يحتاج دعمًا"].map((h,j)=>cell(p(h,{after:0,size:17,bold:true,color:BRAND,align:j>1?AlignmentType.CENTER:AlignmentType.START}),cols[j],{fill:SOFT}))});
-  const rows=AXES.map(([a,ind])=>new TableRow({cantSplit:true,children:[
-    cell(p(a,{after:0,size:18,bold:true}),cols[0]),cell(p(ind,{after:0,size:16,color:"5B6675"}),cols[1]),
-    ...[2,3,4,5].map(j=>cell(p("☐",{after:0,size:24,align:AlignmentType.CENTER}),cols[j]))]}));
-  const total=new TableRow({children:[
-    new TableCell({columnSpan:2,width:{size:cols[0]+cols[1],type:WidthType.DXA},borders,shading:{type:ShadingType.CLEAR,color:"auto",fill:SOFT},margins:{top:60,bottom:60,left:100,right:100},children:[p("المجموع ( ـــــ / ٢٠ )      المتوسط ( ـــــ / ٤ )",{after:0,size:18,bold:true,color:BRAND})]}),
-    new TableCell({columnSpan:4,width:{size:4000,type:WidthType.DXA},borders,margins:{top:60,bottom:60,left:100,right:100},children:[p("١٨–٢٠ متميز · ١٤–١٧ متقدم · ١٠–١٣ متوسط · أقل من ١٠ يحتاج دعمًا",{after:0,size:15,color:"5B6675"})]})]});
-  return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,total]});
+  const cols=[1550,3288,700,700,700,700,2000];
+  const hdr=new TableRow({tableHeader:true,children:["المعيار","المؤشرات","٤ متميز","٣ متقدم","٢ متوسط","١ يحتاج دعمًا","الشاهد"].map((h,j)=>cell(p(h,{after:0,size:16,bold:true,color:BRAND,align:j>1&&j<6?AlignmentType.CENTER:AlignmentType.START}),cols[j],{fill:SOFT}))});
+  const rows=STD.map(([,a,ind])=>new TableRow({cantSplit:true,children:[
+    cell(p(a,{after:0,size:18,bold:true}),cols[0]),cell(p(ind,{after:0,size:15,color:"5B6675"}),cols[1]),
+    ...[2,3,4,5].map(j=>cell(p("☐",{after:0,size:22,align:AlignmentType.CENTER}),cols[j])),cell(p("",{after:0}),cols[6])]}));
+  const span=(n,w,kids,fill)=>new TableCell({columnSpan:n,width:{size:w,type:WidthType.DXA},borders,shading:fill?{type:ShadingType.CLEAR,color:"auto",fill}:undefined,margins:{top:50,bottom:50,left:100,right:100},children:kids});
+  const total=new TableRow({children:[span(2,cols[0]+cols[1],[p("المجموع ( ـــــ / ١٦ )",{after:0,size:18,bold:true,color:BRAND})],SOFT),span(5,cols[2]*4+cols[6],[p(BANDS,{after:0,size:15,color:"5B6675"})])]});
+  const outc=new TableRow({cantSplit:true,children:[span(1,cols[0],[p("نواتج التعلم",{after:0,size:18,bold:true,color:BRAND})],SOFT),
+    span(6,9638-cols[0],[p("الناتج المستهدف للدرس: ..........................................................   نسبة الطالبات المحققات له: ( ______ % )",{after:0,size:16}),
+      p("أداة القياس: ☐ تذكرة خروج   ☐ سؤال ختامي   ☐ مهمة أدائية   ☐ أخرى: ............",{after:0,size:16,color:"5B6675"})])]});
+  return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,total,outc]});
 }
 
 const PREV=V.PREV;
@@ -259,29 +276,35 @@ function visitPage(n,v){
     table([2400,2419,2400,2419],[
       ["تاريخ الزيارة",v.date?[p(`${day(v.date)} ${greg(v.date)}`,{after:0,size:20}),p(hij(v.date),{after:0,size:17,color:"5B6675"})]:"","اسم المعلمة",v.teacher||""],
       ["المادة",v.subject&&v.subject!=="—"?v.subject:"","الصف / الفصل",v.cls||""],
-      ["الحصة",v.period||"","نوع الزيارة",v.type||"☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
+      ["الحصة",v.period||"","نوع الزيارة",v.type||"☐ روتينية  ☐ متابعة  ☐ خارطة  ☐ تبادلية"],
       ["عنوان الدرس","","التقدير العام","☐ متميز ☐ متقدم ☐ متوسط ☐ يحتاج دعمًا"]],{header:false,h:440,labels:true}),
     h3("متابعة توصية الزيارة السابقة"),
     followUp(v.teacher,v.prevForm),
-    h3("بطاقة الملاحظة الصفية"),
+    h3("بطاقة الملاحظة الصفية — وفق معايير التعليم والتعلم"),
     obsCard(),
     h3("صور الزيارة"),
     new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:[4819,4819],layout:TableLayoutType.FIXED,
-      rows:[new TableRow({height:{value:1400,rule:HeightRule.EXACT},children:[photoBox("صورة ١"),photoBox("صورة ٢")]}),
-            new TableRow({height:{value:1400,rule:HeightRule.EXACT},children:[photoBox("صورة ٣"),photoBox("صورة ٤")]})]}),
+      rows:[new TableRow({height:{value:1200,rule:HeightRule.EXACT},children:[photoBox("صورة ١"),photoBox("صورة ٢")]}),
+            new TableRow({height:{value:1200,rule:HeightRule.EXACT},children:[photoBox("صورة ٣"),photoBox("صورة ٤")]})]}),
     sp(),
-    table([4819,4819],[["نقاط القوة","التوصيات (تُتابع في الزيارة القادمة)"],["",""]],{h:1000}),
-    table([4819,4819],[["توقيع المعلمة: ....................................","توقيع الزائر: ...................................."]],{header:false,h:500}),
+    table([4819,4819],[["نقاط القوة","التوصيات (تُتابع في الزيارة القادمة)"],["",""]],{h:950}),
+    table([4819,4819],[["توقيع المعلمة: ....................................","توقيع الزائرة: ...................................."]],{header:false,h:500}),
   ];
 }
-// shade label cells in visit info tables: post-process not needed; keep simple.
+function formIndex(){
+  const by=new Map(); formVisits().forEach((v,i)=>{(by.get(v.teacher)||by.set(v.teacher,[]).get(v.teacher)).push(i+1);});
+  const rows=[...by.entries()].sort((a,b)=>a[1][0]-b[1][0]).map(([t,ns])=>[t,topClass(t),ns.map(n=>`(${n})`).join("  "),ns.map(n=>TOCP["form"+n]||"…").join("، ")]);
+  return table([2300,1900,3138,2300],[["المعلمة","التصنيف","أرقام النماذج","الصفحات"],...rows]);
+}
 const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور","sec3"),
   p("لكل زيارة صفحة مستقلة: املأ بياناتها، ثم أدرج صور الزيارة داخل المربعات (إدراج ← صورة) أو الصقها مباشرة، ثم اكتب نقاط القوة والتوصيات ووقّع. ولإضافة زيارة جديدة انسخ صفحة نموذج والصقها في نهاية السجل.",{color:"5B6675",size:20}),
   p(`نموذج لكل زيارة مجدولة قادمة (${formVisits().length} نموذجًا لـ ${new Set(formVisits().map(v=>v.teacher)).size} معلمة)، مُعبّأ ببياناتها من جدول الزيارات ومرتب حسب التاريخ. الزيارة الثانية فما بعد للمعلمة نفسها تحيل في «متابعة التوصية السابقة» إلى نموذجها السابق.`,{color:"5B6675",size:20}),
+  h3("فهرس النماذج حسب المعلمة","formidx"),
+  formIndex(),
   ...formVisits().flatMap((v,i)=>visitPage(i+1,v))];
 
 // item 13: visits documented in the online record (photos embedded when exported to tools/web-export/assets)
-const AX_KEYS=[["plan","التخطيط للدرس"],["delivery","تنفيذ الدرس"],["interaction","التفاعل الصفي"],["management","إدارة الصف"],["assessment","التقويم"]];
+const AX_KEYS=STD.map(([k,a])=>[k,a]);
 const LEVEL=["","يحتاج دعمًا","متوسط","متقدم","متميز"];
 function imgRun(file,w){
   const buf=fs.readFileSync(file), ext=file.split('.').pop().toLowerCase();
@@ -298,8 +321,9 @@ function webVisitBlock(v,i){
       ["الحصة",v.period||"","نوع الزيارة",v.type||""],
       ["عنوان الدرس",v.lesson||"","التقدير العام",v.rating?LEVEL[v.rating]:"—"]],{header:false,h:440,labels:true}),
     h3("بطاقة الملاحظة الصفية"),
-    table([3400,1600,4638],[["المحور","الدرجة (من ٤)","المستوى"],...AX_KEYS.map(([k,a])=>[a,sc[k]?String(sc[k]):"—",sc[k]?LEVEL[sc[k]]:"—"]),
-      ["المجموع",n?`${tot} / ٢٠`:"—",n===5?LEVEL[tot>=18?4:tot>=14?3:tot>=10?2:1]:"لم تكتمل المحاور"]]),
+    table([3400,1600,4638],[["المعيار","الدرجة (من ٤)","المستوى"],...AX_KEYS.map(([k,a])=>[a,sc[k]?String(sc[k]):"—",sc[k]?LEVEL[sc[k]]:"—"]),
+      ["المجموع",n?`${tot} / ١٦`:"—",n===4?LEVEL[tot>=15?4:tot>=12?3:tot>=8?2:1]:"لم تكتمل المعايير"],
+      ["نواتج التعلم",v.outcomePct!==undefined&&v.outcomePct!==""?`${v.outcomePct}%`:"—",[v.outcomeText,v.outcomeTool].filter(Boolean).join(" — ")||"—"]]),
     h3("متابعة توصية الزيارة السابقة"),
     table([2400,7238],[["التوصية السابقة",v.prevRec?`${v.prevRec.text} (${fmt(v.prevRec.date)})`:"لا توجد"],["مستوى التنفيذ",v.followUp||"—"]],{header:false,labels:true}),
     table([4819,4819],[["نقاط القوة","التوصيات"],[v.strengths||"—",v.notes||"—"]]),
@@ -315,7 +339,7 @@ function webVisitBlock(v,i){
   return out;
 }
 const webVisits=(V.web&&V.web.visits)||[];
-const sec4=[new Paragraph({children:[new PageBreak()]}),h("٤","الزيارات الموثقة في السجل الإلكتروني","sec4"),
+const sec4=!HAS_WEB?[]:[new Paragraph({children:[new PageBreak()]}),h("٤","الزيارات الموثقة في السجل الإلكتروني","sec4"),
   p(V.web?`مصدرها صفحة «سجل الزيارات الصفية» الإلكترونية — تصدير ${greg(V.web.asOf)} الموافق ${hij(V.web.asOf)}. تُوثَّق الزيارة من الجوال (البيانات وبطاقة الملاحظة والصور) فتظهر هنا عند إعادة بناء الملف.`
     :"لم يُصدَّر السجل الإلكتروني بعد. تُوثَّق الزيارات من الجوال في صفحة «سجل الزيارات الصفية» الإلكترونية، ثم يُعاد بناء هذا الملف فتظهر هنا ببطاقاتها وصورها.",{color:"5B6675",size:20}),
   ...(webVisits.length?webVisits.flatMap((v,i)=>webVisitBlock(v,i)):[p("لا توجد زيارات موثقة إلكترونيًا حتى تاريخ التصدير.",{size:20,bold:true,color:ACC,before:200})])];
@@ -341,7 +365,7 @@ function officialForm(){
     cell(p("نسبة تحصيل الطالبات: ( ______ / 100% )   ملاحظة: ................................",{after:0,size:16}),cols[2]),cell(p("",{after:0}),cols[3]),cell(p("",{after:0}),cols[4])]});
   return [new Paragraph({children:[new PageBreak()]}),
     h3("أ) استمارة زيارة معلمة — نموذج الإشراف التربوي (ع-7-004)","app1"),
-    p("المصدر: «نموذج زيارة صفية من المشرف التربوي الزائر» في Google Drive — نسخة فارغة قابلة للتعبئة.",{size:16,color:"5B6675"}),
+    p("المصدر: «نموذج زيارة صفية من المشرف التربوي الزائر» في Google Drive — النموذج المعتمد للزيارات الإشرافية الرسمية.",{size:16,color:"5B6675"}),
     table([1700,2119,1700,2119,1000,1000],[["اسم المعلمة","","التخصص","","الصف",""],["القسم","","سنوات الخدمة","","الزيارة",""],["نوع الزيارة","","النصاب التدريسي","","اليوم والتاريخ",""],["الموضوع","","الهدف من الزيارة","","",""]],{header:false,h:400,labels:true}),
     sp(),
     new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,tot]}),
@@ -384,14 +408,20 @@ function qrPanel(){
       p(d,{after:40,size:17,color:"5B6675",align:AlignmentType.CENTER}),
       new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:u,font:FONT,size:14,color:"5B6675"})]})]}))})]});
 }
-const sec5=[new Paragraph({children:[new PageBreak()]}),h("٥","ملاحق: نماذج الزيارات","sec5"),
-  p("نماذج الزيارات المحفوظة في Google Drive، أُعيد بناؤها جداول قابلة للتعبئة بتنسيق السجل: استمارة زيارة المعلمة المعتمدة في الإشراف التربوي (ع-7-004)، واستمارة تبادل الزيارات مُعبّأة لكل زوج مرشح في قسم «ترشيحات الزيارات التبادلية» مع نسخة فارغة.",{color:"5B6675",size:20}),
+const sec5=[new Paragraph({children:[new PageBreak()]}),h(N_APP,"ملاحق: نماذج الزيارات","sec5"),
+  p("نماذج الزيارات المحفوظة في Google Drive، أُعيد بناؤها جداول قابلة للتعبئة بتنسيق السجل: استمارة زيارة المعلمة المعتمدة في الإشراف التربوي (ع-7-004)، واستمارة تبادل الزيارات مُعبّأة لكل زوج مرشح في قسم «ترشيحات الزيارات التبادلية».",{color:"5B6675",size:20}),
   h3("رموز الاستجابة السريعة (QR)","qr"),
   p("وجّهي كاميرا الجوال إلى الرمز لفتح الملف. يفتح الرابط لمن لهم صلاحية الوصول إلى المجلد أو الصفحة فقط.",{size:18,color:"5B6675"}),
   qrPanel(),
   ...officialForm(),
-  ...PAIRS.flatMap((pr,i)=>exchangeForm(i+1,pr)),
-  ...exchangeForm(PAIRS.length+1,null)];
+  ...PAIRS.flatMap((pr,i)=>exchangeForm(i+1,pr))];
+// approval page — leadership sign-off (القيادة المدرسية: المتابعة والتحسين)
+const secOK=[new Paragraph({children:[new PageBreak()]}),h(N_OK,"اعتماد السجل","approve"),
+  p(`تمت مراجعة سجل الزيارات الصفية للعام الدراسي ${YEAR} — ${SCHOOL}، والاطلاع على خطة الزيارات وملخص الإنجاز ونماذج التوثيق، واعتماد ما ورد فيه من أولويات وتوصيات.`,{size:22,after:200}),
+  table([2400,2412,2413,2413],[["","الاسم","التوقيع","التاريخ"],["المشرفة التربوية","أ. غادة جابر","",""],["قائدة المدرسة","","",""],["وكيلة الشؤون التعليمية","","",""]],{h:700}),
+  sp(),
+  table([2400,7238],[["ملاحظات قائدة المدرسة",""],["قرارات المتابعة",""]],{header:false,h:1300,labels:true}),
+  p("الختم:",{size:20,before:240})];
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{titlePage:true,page:{margin:{top:1300,bottom:1134,left:1134,right:1134,header:560,footer:500}}},
@@ -400,7 +430,7 @@ const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightT
       children:[r(SCHOOL,{size:17,bold:true,color:BRAND}),r("   ·   سجل الزيارات الصفية   ·   العام الدراسي "+YEAR,{size:17,color:"5B6675"})]})]})},
     footers:{first:new Footer({children:[p("",{after:0})]}),default:new Footer({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
       children:[new TextRun({rightToLeft:true,font:FONT,size:18,color:"5B6675",children:["صفحة ",PageNumber.CURRENT," من ",PageNumber.TOTAL_PAGES]})]})]})},
-    children:[...cover,...sec1,...sec2,...sec3,...sec4,...sec5]}]});
+    children:[...cover,...sec1,...sec2,...sec3,...sec4,...sec5,...secOK]}]});
 const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
-if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):id==='qr'?'رموز الاستجابة السريعة':id==='app1'?'أ) استمارة زيارة معلمة':id.startsWith('app2_')?(+id.slice(5)<=PAIRS.length?`ب) استمارة تبادل الزيارات ( ${id.slice(5)} )`:'ب) استمارة تبادل الزيارات (نسخة فارغة)'):t.replace(/^[١٢٣٤٥]\. /,'')]),null,0));process.exit(0);}
+if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):id==='etec'?'ربط السجل بمعايير التقويم المدرسي':id==='formidx'?'فهرس النماذج حسب المعلمة':id==='approve'?'اعتماد السجل':id==='qr'?'رموز الاستجابة السريعة':id==='app1'?'أ) استمارة زيارة معلمة':id.startsWith('app2_')?(+id.slice(5)<=PAIRS.length?`ب) استمارة تبادل الزيارات ( ${id.slice(5)} )`:'ب) استمارة تبادل الزيارات (نسخة فارغة)'):t.replace(/^[١٢٣٤٥٦]\. /,'')]),null,0));process.exit(0);}
 Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});
