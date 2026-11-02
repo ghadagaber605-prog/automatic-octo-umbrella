@@ -149,7 +149,11 @@ function tocPage(){
   const items=TOCITEMS=[["sec1","١. أهداف السجل",0],["sec2","٢. خطة الزيارات الصفية",0],["sum","ملخص الإنجاز ومقارنته بالمستهدف",1],["tbl","جدول الزيارات",1],["sec3","٣. توثيق الزيارات بالصور",0],
     ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
     ["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
-    ...((V.web&&V.web.visits)||[]).map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])];
+    ...((V.web&&V.web.visits)||[]).map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
+    ["sec5","٥. ملاحق: نماذج الزيارات",0],
+    ["app1","أ) استمارة زيارة معلمة — الإشراف التربوي (ع-7-004)",1],
+    ...PAIRS.map((pr,i)=>["app2_"+(i+1),`ب) استمارة تبادل الزيارات ( ${i+1} ) — ${pr[0]} ← ${pr[2]}`,1]),
+    ["app2_"+(PAIRS.length+1),"ب) استمارة تبادل الزيارات — نسخة فارغة",1]];
   const cols=[8238,1400], nb={style:BorderStyle.NONE,size:0,color:"FFFFFF"}, dot={style:BorderStyle.DOTTED,size:4,color:LINE};
   const rows=items.map(([id,t,lvl])=>new TableRow({cantSplit:true,children:[
     new TableCell({width:{size:cols[0],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80+lvl*360},
@@ -315,6 +319,64 @@ const sec4=[new Paragraph({children:[new PageBreak()]}),h("٤","الزيارات
     :"لم يُصدَّر السجل الإلكتروني بعد. تُوثَّق الزيارات من الجوال في صفحة «سجل الزيارات الصفية» الإلكترونية، ثم يُعاد بناء هذا الملف فتظهر هنا ببطاقاتها وصورها.",{color:"5B6675",size:20}),
   ...(webVisits.length?webVisits.flatMap((v,i)=>webVisitBlock(v,i)):[p("لا توجد زيارات موثقة إلكترونيًا حتى تاريخ التصدير.",{size:20,bold:true,color:ACC,before:200})])];
 
+// ---- section 5: visit forms pulled from Google Drive (rebuilt as editable tables) ----
+// A) «استمارة زيارة معلم» — company form ع-7-004 الإشراف التربوي (Drive: نموذج زيارة صفية من المشرف التربوي الزائر.docx)
+const OFF=[["تخطيط السبورة",8,[["التاريخ",1],["المادة",1],["موضوع الدرس",1],["تنظيم السبورة",3],["فاعلية الاستخدام",2]]],
+  ["الوسائل",14,[["حاجة الدرس لوسيلة",3],["وجود الوسيلة",3],["توظيف الوسيلة",3],["الوسائل الحديثة",3],["وسائل أخرى تُذكر",2]]],
+  ["التهيئة والغلق",10,[["مراجعة السابق",2],["التمهيد للدرس",2],["وقت التهيئة",2],["فاعلية التهيئة",2],["غلق الدرس",2]]],
+  ["سير الحصة",14,[["الاستراتيجية المستخدمة",4],["مراعاة الفروق الفردية",4],["وضوح الصوت",2],["تنفيذ التقويم بمراحله",4],["استراتيجيات أخرى",0]]],
+  ["مشاركة الطالبات",14,[["المتميزات",4],["الأقل أداءً",4],["الالتزام بقواعد الصف",3],["إدارة الفصل بكفاءة",3]]],
+  ["الإعداد الذهني والكتابي",14,[["التحضير الذهني",4],["سجل التحضير",4],["خطة المنهج",2],["كفاءة التحضير",2],["تعزيز الانتماء الوطني وقيم النبوة",2]]],
+  ["متابعة دفاتر الطالبات",12,[["إعطاء الواجبات بانتظام",3],["تصحيح الواجبات",3],["تصحيح الكتاب",3],["تفعيل أوراق العمل",3]]],
+  ["أخرى",14,[["لغة واضحة للطالبات",3],["استخدام سجل المتابعة",3],["تنظيم وقت الحصة",3],["الالتزام بأخلاقيات المهنة",2],["تنفيذ التوصيات السابقة",3]]]];
+function officialForm(){
+  const cols=[1900,800,5338,800,800];
+  const rows=OFF.map(([k,w,els])=>new TableRow({cantSplit:true,children:[
+    cell(p(k,{after:0,size:18,bold:true}),cols[0],{fill:SOFT}),cell(p(String(w),{after:0,size:18,bold:true,align:AlignmentType.CENTER}),cols[1]),
+    cell(p(els.map(([e,n])=>n?`${e} (${n})`:e).join("  ·  "),{after:0,size:16}),cols[2]),
+    cell(p("",{after:0}),cols[3]),cell(p("",{after:0}),cols[4])]}));
+  const hdr=new TableRow({tableHeader:true,children:["بند التقييم","الدرجة","عناصر التقييم (درجة كل عنصر)","التقييم","شواهد"].map((h,j)=>cell(h,cols[j],{fill:SOFT,bold:true,color:BRAND,size:18}))});
+  const tot=new TableRow({children:[cell(p("المجموع",{after:0,size:18,bold:true,color:BRAND}),cols[0],{fill:SOFT}),cell(p("100",{after:0,size:18,bold:true,align:AlignmentType.CENTER}),cols[1]),
+    cell(p("نسبة تحصيل الطالبات: ( ______ / 100% )   ملاحظة: ................................",{after:0,size:16}),cols[2]),cell(p("",{after:0}),cols[3]),cell(p("",{after:0}),cols[4])]});
+  return [new Paragraph({children:[new PageBreak()]}),
+    h3("أ) استمارة زيارة معلمة — نموذج الإشراف التربوي (ع-7-004)","app1"),
+    p("المصدر: «نموذج زيارة صفية من المشرف التربوي الزائر» في Google Drive — نسخة فارغة قابلة للتعبئة.",{size:16,color:"5B6675"}),
+    table([1700,2119,1700,2119,1000,1000],[["اسم المعلمة","","التخصص","","الصف",""],["القسم","","سنوات الخدمة","","الزيارة",""],["نوع الزيارة","","النصاب التدريسي","","اليوم والتاريخ",""],["الموضوع","","الهدف من الزيارة","","",""]],{header:false,h:400,labels:true}),
+    sp(),
+    new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,tot]}),
+    sp(),
+    table([3212,3213,3213],[["نقاط القوة","فرص التحسين","مقترحات تطويرية"],["","",""]],{h:1100}),
+    sp(),
+    table([3212,3213,3213],[["المشرفة التربوية: ........................","المعلمة: ........................","مديرة المدارس: ........................"],["التوقيع: ........................","التوقيع: ........................","التوقيع: ........................"]],{header:false,h:420}),
+    p("الختم:",{size:18,before:120})];
+}
+// B) «استمارة تبادل الزيارات» — merged from Drive: استمارة زيارة تبادلية.doc + استمارة تبادل زيارات.docx
+const EXCH=["وضوح أهداف الدرس","تسلسل خطوات الدرس","وضوح وفصاحة الصوت","مناسبة طريقة التدريس","جودة الأسئلة التي تُلقى على الطالبات","مهارة توزيع الأسئلة على الطالبات",
+  "تقبّل المعلمة لآراء ومشاركات الطالبات","جذب انتباه الطالبات","استخدام عبارات التشجيع والتعزيز","تمكّن المعلمة من المادة العلمية","استثمار وقت الحصة","شخصية المعلمة",
+  "ضبط الطالبات وإدارة الصف","استخدام السبورة وتنظيمها","توظيف الوسائل والتقنية المناسبة للدرس","تنفيذ نشاطات المادة","تقييم الدرس في نهاية الحصة","رصد وتسجيل مشاركات الطالبات"];
+function exchangeForm(n,pair){
+  const [vis,cl,host,sub]=pair||["","","",""];
+  const cols=[500,4338,950,950,950,950,1000];
+  const hdr=new TableRow({tableHeader:true,children:["م","المجال","ممتاز","جيد جدًا","جيد","لم ينفذ","ملحوظات"].map((h,j)=>cell(p(h,{after:0,size:17,bold:true,color:BRAND,align:j>1?AlignmentType.CENTER:AlignmentType.START}),cols[j],{fill:SOFT}))});
+  const rows=EXCH.map((e,i)=>new TableRow({cantSplit:true,children:[cell(p(String(i+1),{after:0,size:16,align:AlignmentType.CENTER}),cols[0]),cell(p(e,{after:0,size:16}),cols[1]),
+    ...[2,3,4,5].map(j=>cell(p("☐",{after:0,size:18,align:AlignmentType.CENTER}),cols[j])),cell(p("",{after:0}),cols[6])]}));
+  return [new Paragraph({children:[new PageBreak()]}),
+    h3(`ب) استمارة تبادل الزيارات${pair?` ( ${n} )  —  ${vis} ← ${host}`:" (نسخة فارغة)"}`,"app2_"+n),
+    p(pair?`ترشيح من قسم «ترشيحات الزيارات التبادلية»: ${vis} (${cl}) تزور ★ ${host} — ${sub}.`:"المصدر: استمارتا تبادل الزيارات في Google Drive، مدمجتان في نموذج واحد.",{size:16,color:"5B6675"}),
+    table([1600,1613,1600,1613,1600,1612],[["المعلمة الزائرة",vis,"المعلمة المزارة",host,"المادة",sub.split(" — ")[0]||""],["الصف والفصل","","التاريخ واليوم","","موضوع الدرس / الاستراتيجية",""]],{header:false,h:420,labels:true}),
+    table([2400,7238],[["الهدف من الزيارة",pair?`اكتساب ممارسات متميزة من المعلمة المستضيفة في ${sub.split(" — ")[0]} ونقلها إلى صف المعلمة الزائرة.`:""]],{header:false,h:420,labels:true}),
+    h3("عناصر التقويم"),
+    new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows]}),
+    sp(),
+    table([4819,4819],[["الملاحظات الإيجابية للمعلمة الزائرة","الممارسات التي ستطبقها المعلمة الزائرة في صفها"],["",""]],{h:850}),
+    table([3212,3213,3213],[["المعلمة الزائرة: ..................","المعلمة المزارة: ..................","المشرفة التربوية: .................."]],{header:false,h:420})];
+}
+const sec5=[new Paragraph({children:[new PageBreak()]}),h("٥","ملاحق: نماذج الزيارات","sec5"),
+  p("نماذج الزيارات المحفوظة في Google Drive، أُعيد بناؤها جداول قابلة للتعبئة بتنسيق السجل: استمارة زيارة المعلمة المعتمدة في الإشراف التربوي (ع-7-004)، واستمارة تبادل الزيارات مُعبّأة لكل زوج مرشح في قسم «ترشيحات الزيارات التبادلية» مع نسخة فارغة.",{color:"5B6675",size:20}),
+  ...officialForm().slice(1),
+  ...PAIRS.flatMap((pr,i)=>exchangeForm(i+1,pr)),
+  ...exchangeForm(PAIRS.length+1,null)];
+
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
   sections:[{properties:{titlePage:true,page:{margin:{top:1300,bottom:1134,left:1134,right:1134,header:560,footer:500}}},
     headers:{first:new Header({children:[p("",{after:0})]}),default:new Header({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
@@ -322,7 +384,7 @@ const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightT
       children:[r(SCHOOL,{size:17,bold:true,color:BRAND}),r("   ·   سجل الزيارات الصفية   ·   العام الدراسي "+YEAR,{size:17,color:"5B6675"})]})]})},
     footers:{first:new Footer({children:[p("",{after:0})]}),default:new Footer({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
       children:[new TextRun({rightToLeft:true,font:FONT,size:18,color:"5B6675",children:["صفحة ",PageNumber.CURRENT," من ",PageNumber.TOTAL_PAGES]})]})]})},
-    children:[...cover,...sec1,...sec2,...sec3,...sec4]}]});
+    children:[...cover,...sec1,...sec2,...sec3,...sec4,...sec5]}]});
 const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
-if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):t.replace(/^[١٢٣٤]\. /,'')]),null,0));process.exit(0);}
+if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):id==='app1'?'أ) استمارة زيارة معلمة':id.startsWith('app2_')?(+id.slice(5)<=PAIRS.length?`ب) استمارة تبادل الزيارات ( ${id.slice(5)} )`:'ب) استمارة تبادل الزيارات (نسخة فارغة)'):t.replace(/^[١٢٣٤٥]\. /,'')]),null,0));process.exit(0);}
 Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});

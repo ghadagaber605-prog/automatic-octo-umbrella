@@ -9,13 +9,13 @@ hint = norm("اضغطي على أي بند للانتقال إليه")
 res = {}
 start = max([i for i, pg in enumerate(pages) if hint in pg] or [1]) + 1   # first page after the (possibly multi-page) TOC
 for id_, text in items:
-    if id_.startswith(("form", "web")):                       # match "…رقم ( N )" only; teacher names extract unreliably
+    if id_.startswith(("form", "web", "app2")):                       # match "…رقم ( N )" only; teacher names extract unreliably
         text = text.split("—")[0]
-    key = norm(text) if id_.startswith(("form", "web")) else norm(text)[:12]   # pdftotext sometimes swaps letters later in a line
+    key = norm(text) if id_.startswith(("form", "web", "app2")) else norm(text)[:12]   # pdftotext sometimes swaps letters later in a line
     pat = re.compile(re.escape(key) + r"(?!\d)")
     for i in range(start, n):
         m = pat.search(pages[i])
-        if m and m.start() < 80:                     # heading sits at the top of its page, right after the running header
+        if m and (m.start() < 80 or id_ == "app1"):                     # heading sits at the top of its page, right after the running header
             res[id_] = i + 1; start = i; break
 json.dump(res, open(out, "w"), ensure_ascii=False, indent=1)
 missing = [i for i, _ in items if i not in res]
