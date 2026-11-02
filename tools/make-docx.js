@@ -1,12 +1,15 @@
 const fs=require('fs');
-const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,HeadingLevel,PageBreak,VerticalAlign,LevelFormat,TableLayoutType,HeightRule}=require('docx');
+const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,WidthType,AlignmentType,ShadingType,BorderStyle,HeadingLevel,PageBreak,VerticalAlign,LevelFormat,TableLayoutType,HeightRule,Header,Footer,PageNumber,Bookmark,InternalHyperlink}=require('docx');
+let TOCP={};try{TOCP=JSON.parse(fs.readFileSync(__dirname+'/toc-pages.json','utf8'));}catch(e){}
+const SCHOOL="مدارس الرواد — فرع البدائع بنات", YEAR="1448هـ";
 const BRAND="0F5F5C", SOFT="E3F0EE", ACC="B7791F", ACCSOFT="FBF1E1", LINE="BFB9AD";
 const FONT="Arial", W=9638; // A4 text width with 1" margins ≈ 9638? (11906-2*1134)
 const r=(t,o={})=>new TextRun({text:t,rightToLeft:true,font:FONT,size:o.size||24,bold:o.bold,color:o.color});
 const p=(t,o={})=>new Paragraph({bidirectional:true,alignment:o.align||AlignmentType.START,spacing:{after:o.after??120,before:o.before??0},children:Array.isArray(t)?t:[r(t,o)],...(o.extra||{})});
-const h=(num,t)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.START,spacing:{before:240,after:160},
-  border:{bottom:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:4}},children:[r(num+"  ",{size:34,bold:true,color:ACC}),r(t,{size:34,bold:true,color:BRAND})]});
-const h3=t=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.START,spacing:{before:240,after:100},children:[r(t,{size:28,bold:true,color:BRAND})]});
+const bm=(id,kids)=>id?[new Bookmark({id,children:kids})]:kids;
+const h=(num,t,id)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_1,alignment:AlignmentType.START,spacing:{before:240,after:160},
+  border:{bottom:{style:BorderStyle.SINGLE,size:12,color:BRAND,space:4}},children:bm(id,[r(num+"  ",{size:34,bold:true,color:ACC}),r(t,{size:34,bold:true,color:BRAND})])});
+const h3=(t,id)=>new Paragraph({bidirectional:true,heading:HeadingLevel.HEADING_2,alignment:AlignmentType.START,spacing:{before:240,after:100},children:bm(id,[r(t,{size:28,bold:true,color:BRAND})])});
 const bord={style:BorderStyle.SINGLE,size:4,color:LINE};
 const borders={top:bord,bottom:bord,left:bord,right:bord};
 const cell=(content,w,o={})=>new TableCell({width:{size:w,type:WidthType.DXA},borders,verticalAlign:o.v||VerticalAlign.CENTER,
@@ -25,6 +28,11 @@ const MONTHS=["يناير","فبراير","مارس","أبريل","مايو","ي
 const DAYS=["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 const fmt=d=>{const x=new Date(d+"T00:00:00Z");return `${x.getUTCDate()} ${MONTHS[x.getUTCMonth()]}`;};
 const day=d=>DAYS[new Date(d+"T00:00:00Z").getUTCDay()];
+const HF=new Intl.DateTimeFormat("ar-SA-u-ca-islamic-umalqura-nu-latn",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"});
+const hij=d=>HF.format(new Date(d+"T00:00:00Z")).replace(" هـ","هـ");          // 21 جمادى الأولى 1448هـ
+const hijS=d=>hij(d).replace(/ ?\d{4}هـ$/,"");                                      // 21 جمادى الأولى
+const TODAY="2026-11-01";
+const greg=d=>`${fmt(d)} ${d.slice(0,4)}م`;
 // one form per teacher: her next upcoming visit (from today), else her most recent one
 function formVisits(){
   const by=new Map();
@@ -50,17 +58,17 @@ function summaryPage(){
   const never=teachers.filter(t=>!V.all.some(v=>v.teacher===t&&v.status==="تمت"));
   // per-teacher rows
   const tRows=teachers.map(t=>{const vs=V.all.filter(v=>v.teacher===t);const d=vs.filter(v=>v.status==="تمت");const o=vs.filter(v=>v.status==="لم تُوثّق").length,u=vs.filter(v=>v.status==="مجدولة").length;
-    const last=d.length?fmt(d[d.length-1].date):"لا يوجد";const nxt=vs.find(v=>v.status==="مجدولة");
-    return {t,n:vs.length,d:d.length,o,u,last,nxt:nxt?fmt(nxt.date):"—"};}).sort((a,b)=>a.d-b.d||b.o-a.o);
-  const tc=[2000,1000,1000,1150,1100,1700,1688];
+    const last=d.length?fmt(d[d.length-1].date)+" / "+hijS(d[d.length-1].date):"لا يوجد";const nxt=vs.find(v=>v.status==="مجدولة");
+    return {t,n:vs.length,d:d.length,o,u,last,nxt:nxt?fmt(nxt.date)+" / "+hijS(nxt.date):"—"};}).sort((a,b)=>a.d-b.d||b.o-a.o);
+  const tc=[1850,850,850,1000,950,2069,2069];
   const tTable=new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:tc,layout:TableLayoutType.FIXED,
     rows:[new TableRow({tableHeader:true,children:["المعلمة","الإجمالي","تمت","لم تُوثّق","مجدولة","آخر زيارة موثقة","الزيارة القادمة"].map((h,j)=>cell(h,tc[j],{fill:SOFT,bold:true,color:BRAND,size:18}))}),
       ...tRows.map(r=>new TableRow({cantSplit:true,children:[r.t,String(r.n),String(r.d),String(r.o),String(r.u),r.last,r.nxt].map((x,j)=>cell(p(x,{after:0,size:18,bold:j===0,color:j===5&&r.d===0?"A83232":undefined}),tc[j],{fill:r.d===0?"FDF0DC":undefined}))}))]});
   const stages=["رياض الأطفال","ابتدائي","ابتدائي (ثنائي اللغة)","متوسط","ثانوي","متوسط / ثانوي","غير محدد"].filter(k=>V.all.some(v=>stageOf(v.cls)===k));
   const types=[...new Set(V.all.map(v=>v.type))];
   return [
-    h3("ملخص الإنجاز ومقارنته بالمستهدف"),
-    p(`حتى ${fmt("2026-11-01")} 2026 · المصدر: جدول الزيارات في هذا السجل (سجلّ الزيارات الصفية + سجل زيارات خارطة التعليم والتعلم).`,{size:18,color:"5B6675"}),
+    h3("ملخص الإنجاز ومقارنته بالمستهدف","sum"),
+    p(`حتى ${day(TODAY)} ${greg(TODAY)} الموافق ${hij(TODAY)} · المصدر: جدول الزيارات في هذا السجل (سجلّ الزيارات الصفية + سجل زيارات خارطة التعليم والتعلم).`,{size:18,color:"5B6675"}),
     kpiRow([[V.all.length,"إجمالي الزيارات المخططة"],[due,"زيارات حلّ موعدها"],[done,"زيارات موثقة","2F7D46","E5F3E9"],[over,"مضى موعدها ولم تُوثّق","A15C07","FDF0DC"],[up,"زيارات قادمة"]]),
     sp(),
     kpiRow([[rate+"%","نسبة التوثيق من الزيارات التي حلّ موعدها",rate>=90?"2F7D46":"A83232"],["90%","المستهدف في الخطة التشغيلية (برنامج 20)"],[teachers.length,"معلمة في الخطة"],[never.length,"معلمات بلا زيارة موثقة","A83232","FDF0DC"]]),
@@ -76,14 +84,14 @@ function summaryPage(){
 }
 
 function visitsTable(){
-  const cols=[450,1450,1550,1350,1050,650,1300,1838];
+  const cols=[450,1550,1500,1350,1000,600,1300,1888];
   const fills={"تمت":"E5F3E9","لم تُوثّق":"FDF0DC","مجدولة":null};
   const sc={"تمت":"2F7D46","لم تُوثّق":"A15C07","مجدولة":"0F5F5C"};
   const c=(t,w,o={})=>cell(p(t,{after:0,size:18,bold:o.bold,color:o.color,align:o.align}),w,{fill:o.fill});
-  const head=new TableRow({tableHeader:true,children:["م","التاريخ","اسم المعلمة","المادة","الصف","الحصة","نوع الزيارة","الحالة"].map((h,j)=>cell(h,cols[j],{fill:SOFT,bold:true,color:BRAND,size:18}))});
+  const head=new TableRow({tableHeader:true,children:["م","التاريخ (م / هـ)","اسم المعلمة","المادة","الصف","الحصة","نوع الزيارة","الحالة"].map((h,j)=>cell(h,cols[j],{fill:SOFT,bold:true,color:BRAND,size:18}))});
   const rows=V.all.map((v,i)=>new TableRow({cantSplit:true,children:[
     c(String(i+1),cols[0],{align:AlignmentType.CENTER}),
-    c(`${day(v.date)} ${fmt(v.date)}`,cols[1]),
+    cell([p(`${day(v.date)} ${fmt(v.date)}`,{after:0,size:18}),p(hijS(v.date),{after:0,size:15,color:"5B6675"})],cols[1]),
     c(v.teacher,cols[2],{bold:true}),
     c(v.subject,cols[3]),c(v.cls,cols[4]),c(v.period||"—",cols[5],{align:AlignmentType.CENTER}),
     c(v.type,cols[6],{color:v.src==="الخارطة"?ACC:undefined,bold:v.src==="الخارطة"}),
@@ -96,11 +104,30 @@ function visitsTable(){
 
 const sp=()=>p("",{after:60});
 
+let TOCITEMS=[];
+// Table of contents: page numbers come from tools/toc-pages.json (filled by build.sh after a first render)
+function tocPage(){
+  const items=TOCITEMS=[["sec1","١. أهداف السجل",0],["sec2","٢. خطة الزيارات الصفية",0],["sum","ملخص الإنجاز ومقارنته بالمستهدف",1],["tbl","جدول الزيارات",1],["sec3","٣. توثيق الزيارات بالصور",0],
+    ...formVisits().map((v,i)=>["form"+(i+1),`نموذج ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2])];
+  const cols=[8238,1400], nb={style:BorderStyle.NONE,size:0,color:"FFFFFF"}, dot={style:BorderStyle.DOTTED,size:4,color:LINE};
+  const rows=items.map(([id,t,lvl])=>new TableRow({cantSplit:true,children:[
+    new TableCell({width:{size:cols[0],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80+lvl*360},
+      children:[p([new InternalHyperlink({anchor:id,children:[r(t,{size:lvl===0?24:lvl===1?21:19,bold:lvl===0,color:lvl===0?BRAND:undefined})]})],{after:0})]}),
+    new TableCell({width:{size:cols[1],type:WidthType.DXA},borders:{top:nb,left:nb,right:nb,bottom:dot},margins:{top:30,bottom:30,left:80,right:80},
+      children:[p(String(TOCP[id]||"…"),{after:0,size:lvl===0?24:20,bold:lvl===0,align:AlignmentType.END})]})]}));
+  return [h3("فهرس المحتويات"),
+    new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[
+      new TableRow({children:[cell(p("المحتوى",{after:0,bold:true,color:BRAND,size:20}),cols[0],{fill:SOFT}),cell(p("الصفحة",{after:0,bold:true,color:BRAND,size:20,align:AlignmentType.END}),cols[1],{fill:SOFT})]}),...rows]}),
+    p("اضغطي على أي بند للانتقال إليه.",{size:17,color:"5B6675",before:80})];
+}
+
 // Cover
 const cover=[
   new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{before:1600,after:200},children:[r("سجل الزيارات الصفية",{size:64,bold:true,color:BRAND})]}),
   p("أداة لتخطيط الزيارات الصفية ومتابعتها وتوثيقها بالصور",{align:AlignmentType.CENTER,size:28,color:"5B6675",after:800}),
   table([3000,6638],[["اسم المدرسة",""],["العام الدراسي",""],["الزائر (المدير / المشرف / الوكيل)",""],["تاريخ بدء السجل",""]],{header:false,h:600,labels:true}),
+  new Paragraph({children:[new PageBreak()]}),
+  ...tocPage(),
   new Paragraph({children:[new PageBreak()]}),
 ];
 
@@ -113,11 +140,11 @@ const goals=[["تحسين جودة التعليم","متابعة الأداء ا
 ["تحقيق العدالة والشمول","ضمان زيارة جميع المعلمين وجميع المواد والصفوف وفق خطة زمنية متوازنة."],
 ["دعم التخطيط للتطوير المهني","بناء البرامج التدريبية والورش على احتياجات فعلية مستخلصة من الزيارات."],
 ["تعزيز التواصل البنّاء","ترسيخ ثقافة التغذية الراجعة الإيجابية والشراكة بين الإدارة والمعلمين."]];
-const sec1=[h("١","أهداف السجل"),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
+const sec1=[h("١","أهداف السجل","sec1"),p("يهدف سجل الزيارات الصفية إلى ما يلي:",{color:"5B6675"}),
   table([700,2800,6138],[["م","الهدف","التوضيح"],...goals.map((g,i)=>[{...cell,opts:{}}&&String(i+1),g[0],g[1]])].map((row,i)=>i===0?row:row.map((c,j)=>j===1?p(c,{after:0,bold:true,size:22}):c)))];
 
 // 2 Plan
-const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزيارات الصفية"),
+const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزيارات الصفية","sec2"),
   h3("أنواع الزيارات الصفية"),
   table([2000,4838,2800],[["نوع الزيارة","الهدف منها","العدد المقترح لكل معلم"],
    ["استطلاعية","التعرف على المعلم وبيئة الصف وتحديد الاحتياجات الأولية","زيارة واحدة بداية العام"],
@@ -140,8 +167,8 @@ const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزي�
   new Paragraph({children:[new PageBreak()]}),
   ...summaryPage(),
   new Paragraph({children:[new PageBreak()]}),
-  h3("جدول الزيارات"),
-  p(`مصدر البيانات: سجلّ الزيارات الصفية الإلكتروني وسجل زيارات خارطة التعليم والتعلم — حتى ${fmt("2026-11-01")}. إجمالي الزيارات: ${V.all.length} · تمت: ${cnt("تمت")} · مجدولة قادمة: ${cnt("مجدولة")} · مضى موعدها ولم تُوثّق: ${cnt("لم تُوثّق")}.`,{size:20,color:"5B6675"}),
+  h3("جدول الزيارات","tbl"),
+  p(`مصدر البيانات: سجلّ الزيارات الصفية الإلكتروني وسجل زيارات خارطة التعليم والتعلم — حتى ${greg(TODAY)} الموافق ${hij(TODAY)}. إجمالي الزيارات: ${V.all.length} · تمت: ${cnt("تمت")} · مجدولة قادمة: ${cnt("مجدولة")} · مضى موعدها ولم تُوثّق: ${cnt("لم تُوثّق")}.`,{size:20,color:"5B6675"}),
   visitsTable(),
   p("الحالة: «تمت» زيارة موثقة · «مجدولة» موعدها قادم · «لم تُوثّق» مضى موعدها دون تسجيل تنفيذها — ضعي علامة على ما حدث فعلًا: تمت (نُفّذت ولم تُسجَّل) أو مؤجلة (تُنقل لموعد جديد) أو ملغاة. نوع «خارطة التعليم والتعلم» = حضور درس مصمم وفق الخارطة.",{size:18,color:"5B6675",before:80}),
 ];
@@ -149,7 +176,7 @@ const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزي�
 // 3 Documentation: one page per visit, 3 visit forms
 const photoBox=(label)=>new TableCell({width:{size:4819,type:WidthType.DXA},borders:{top:{style:BorderStyle.DASHED,size:8,color:BRAND},bottom:{style:BorderStyle.DASHED,size:8,color:BRAND},left:{style:BorderStyle.DASHED,size:8,color:BRAND},right:{style:BorderStyle.DASHED,size:8,color:BRAND}},
   shading:{type:ShadingType.CLEAR,color:"auto",fill:SOFT},verticalAlign:VerticalAlign.CENTER,
-  children:[p("📷",{align:AlignmentType.CENTER,size:40,after:60}),p(label,{align:AlignmentType.CENTER,size:22,color:BRAND,bold:true,after:0}),p("(إدراج ← صورة)",{align:AlignmentType.CENTER,size:18,color:"5B6675",after:0})]});
+  children:[p("📷",{align:AlignmentType.CENTER,size:32,after:20}),p(label,{align:AlignmentType.CENTER,size:22,color:BRAND,bold:true,after:0}),p("(إدراج ← صورة)",{align:AlignmentType.CENTER,size:18,color:"5B6675",after:0})]});
 
 const AXES=[["التخطيط للدرس","وضوح الأهداف، ملاءمة الأنشطة للأهداف، تنوع مصادر التعلم"],
   ["تنفيذ الدرس","التهيئة، تنوع الاستراتيجيات، توظيف التقنية، إدارة زمن الحصة"],
@@ -168,33 +195,58 @@ function obsCard(){
   return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[hdr,...rows,total]});
 }
 
+// last recorded recommendation per teacher (from the two source records)
+const PREV={
+  "منار الصميت":{date:"2026-10-18",src:"زيارة الخارطة",text:"العمل على العروض المرئية حيث إنها عامل مساعد"},
+  "أفراح المنصور":{date:"2026-10-19",src:"زيارة الخارطة",text:"تفعيل الألعاب التعليمية واستراتيجيات تدعم مهارات التفكير وتعزز دور الطالبة داخل الحصة"},
+  "مرام الرشيدي":{date:"2026-09-20",src:"سجل الزيارات",text:"تنوع أساليب التقييم وإدارة الأسئلة"},
+};
+function followUp(t){
+  const pr=PREV[t];
+  const recCell=pr?[p(pr.text,{after:0,size:18,bold:true}),p(`(${pr.src} — ${fmt(pr.date)} / ${hijS(pr.date)})`,{after:0,size:15,color:"5B6675"})]
+                  :[p("لا توجد توصية مسجلة في السجل — تُكتب هنا إن وُجدت: ...........................................",{after:0,size:17,color:"5B6675"})];
+  const cols=[2400,7238];
+  const lab=t=>cell(p(t,{after:0,size:20,bold:true,color:BRAND}),cols[0],{fill:SOFT});
+  return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[
+    new TableRow({height:{value:430,rule:HeightRule.ATLEAST},children:[lab("التوصية السابقة"),cell(recCell,cols[1])]}),
+    new TableRow({height:{value:430,rule:HeightRule.ATLEAST},children:[lab("مستوى التنفيذ"),cell(p("☐ نُفّذت     ☐ نُفّذت جزئيًا     ☐ لم تُنفّذ          الشاهد / الملاحظة: ................................",{after:0,size:18}),cols[1])]})]});
+}
 function visitPage(n,v){
   v=v||{};
   return [new Paragraph({children:[new PageBreak()]}),
-    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"+(v.teacher?"  —  "+v.teacher:"")),
+    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"+(v.teacher?"  —  "+v.teacher:""),"form"+n),
     table([2400,2419,2400,2419],[
-      ["تاريخ الزيارة",v.date?`${day(v.date)} ${fmt(v.date)} 2026`:"","اسم المعلمة",v.teacher||""],
+      ["تاريخ الزيارة",v.date?[p(`${day(v.date)} ${greg(v.date)}`,{after:0,size:20}),p(hij(v.date),{after:0,size:17,color:"5B6675"})]:"","اسم المعلمة",v.teacher||""],
       ["المادة",v.subject&&v.subject!=="—"?v.subject:"","الصف / الفصل",v.cls||""],
       ["الحصة",v.period||"","نوع الزيارة",v.type||"☐ استطلاعية  ☐ تقويمية  ☐ متابعة  ☐ تبادلية"],
-      ["عنوان الدرس","","التقدير العام","☐ متميز ☐ متقدم ☐ متوسط ☐ يحتاج دعمًا"]],{header:false,h:520,labels:true}),
+      ["عنوان الدرس","","التقدير العام","☐ متميز ☐ متقدم ☐ متوسط ☐ يحتاج دعمًا"]],{header:false,h:440,labels:true}),
+    h3("متابعة توصية الزيارة السابقة"),
+    followUp(v.teacher),
     h3("بطاقة الملاحظة الصفية"),
     obsCard(),
     h3("صور الزيارة"),
     new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:[4819,4819],layout:TableLayoutType.FIXED,
-      rows:[new TableRow({height:{value:1750,rule:HeightRule.EXACT},children:[photoBox("صورة ١"),photoBox("صورة ٢")]}),
-            new TableRow({height:{value:1750,rule:HeightRule.EXACT},children:[photoBox("صورة ٣"),photoBox("صورة ٤")]})]}),
+      rows:[new TableRow({height:{value:1400,rule:HeightRule.EXACT},children:[photoBox("صورة ١"),photoBox("صورة ٢")]}),
+            new TableRow({height:{value:1400,rule:HeightRule.EXACT},children:[photoBox("صورة ٣"),photoBox("صورة ٤")]})]}),
     sp(),
-    table([4819,4819],[["نقاط القوة","التوصيات"],["",""]],{h:1150}),
+    table([4819,4819],[["نقاط القوة","التوصيات (تُتابع في الزيارة القادمة)"],["",""]],{h:1000}),
     table([4819,4819],[["توقيع المعلمة: ....................................","توقيع الزائر: ...................................."]],{header:false,h:500}),
   ];
 }
 // shade label cells in visit info tables: post-process not needed; keep simple.
-const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور"),
+const sec3=[new Paragraph({children:[new PageBreak()]}),h("٣","توثيق الزيارات بالصور","sec3"),
   p("لكل زيارة صفحة مستقلة: املأ بياناتها، ثم أدرج صور الزيارة داخل المربعات (إدراج ← صورة) أو الصقها مباشرة، ثم اكتب نقاط القوة والتوصيات ووقّع. ولإضافة زيارة جديدة انسخ صفحة نموذج والصقها في نهاية السجل.",{color:"5B6675",size:20}),
   p("وُزّعت النماذج على المعلمات: نموذج لكل معلمة مُعبّأ ببيانات زيارتها القادمة في جدول الزيارات، ومرتبة حسب تاريخ الزيارة.",{color:"5B6675",size:20}),
   ...formVisits().flatMap((v,i)=>visitPage(i+1,v))];
 
 const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightToLeft:true}}}},
-  sections:[{properties:{page:{margin:{top:1134,bottom:1134,left:1134,right:1134}}},children:[...cover,...sec1,...sec2,...sec3]}]});
+  sections:[{properties:{titlePage:true,page:{margin:{top:1300,bottom:1134,left:1134,right:1134,header:560,footer:500}}},
+    headers:{first:new Header({children:[p("",{after:0})]}),default:new Header({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
+      border:{bottom:{style:BorderStyle.SINGLE,size:6,color:BRAND,space:4}},
+      children:[r(SCHOOL,{size:17,bold:true,color:BRAND}),r("   ·   سجل الزيارات الصفية   ·   العام الدراسي "+YEAR,{size:17,color:"5B6675"})]})]})},
+    footers:{first:new Footer({children:[p("",{after:0})]}),default:new Footer({children:[new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{after:0},
+      children:[new TextRun({rightToLeft:true,font:FONT,size:18,color:"5B6675",children:["صفحة ",PageNumber.CURRENT," من ",PageNumber.TOTAL_PAGES]})]})]})},
+    children:[...cover,...sec1,...sec2,...sec3]}]});
 const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
+if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):t.replace(/^[١٢٣]\. /,'')]),null,0));process.exit(0);}
 Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});
