@@ -15,7 +15,7 @@ for id_, text in items:
     pat = re.compile(re.escape(key) + r"(?!\d)")
     for i in range(start, n):
         m = pat.search(pages[i])
-        if m and (m.start() < 80 or id_ == "app1"):                     # heading sits at the top of its page, right after the running header
+        if m and (m.start() < 80 or id_ == "qr"):                     # heading sits at the top of its page, right after the running header
             res[id_] = i + 1; start = i; break
 json.dump(res, open(out, "w"), ensure_ascii=False, indent=1)
 missing = [i for i, _ in items if i not in res]

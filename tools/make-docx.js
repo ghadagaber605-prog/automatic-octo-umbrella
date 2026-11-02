@@ -151,6 +151,7 @@ function tocPage(){
     ["sec4","٤. الزيارات الموثقة في السجل الإلكتروني",0],
     ...((V.web&&V.web.visits)||[]).map((v,i)=>["web"+(i+1),`زيارة موثقة ${i+1} — ${v.teacher}  (${fmt(v.date)} / ${hijS(v.date)})`,2]),
     ["sec5","٥. ملاحق: نماذج الزيارات",0],
+    ["qr","رموز QR: نماذج الزيارات الممسوحة (Drive) والسجل الإلكتروني",1],
     ["app1","أ) استمارة زيارة معلمة — الإشراف التربوي (ع-7-004)",1],
     ...PAIRS.map((pr,i)=>["app2_"+(i+1),`ب) استمارة تبادل الزيارات ( ${i+1} ) — ${pr[0]} ← ${pr[2]}`,1]),
     ["app2_"+(PAIRS.length+1),"ب) استمارة تبادل الزيارات — نسخة فارغة",1]];
@@ -371,9 +372,24 @@ function exchangeForm(n,pair){
     table([4819,4819],[["الملاحظات الإيجابية للمعلمة الزائرة","الممارسات التي ستطبقها المعلمة الزائرة في صفها"],["",""]],{h:850}),
     table([3212,3213,3213],[["المعلمة الزائرة: ..................","المعلمة المزارة: ..................","المشرفة التربوية: .................."]],{header:false,h:420})];
 }
+// QR codes (tools/make_qr.py) — scan with the phone camera
+const QRS=[["qr/drive-scans.png","نماذج الزيارات الصفية الممسوحة","مجلد «الزيارات الصفيه للمعلمات الجدد» في Google Drive: استمارات زيارات المعلمات الجدد الممسوحة (CamScanner — سبتمبر 2025).","drive.google.com/drive/folders/12waj8-BzUFtovYqaF3-5igySbA-aqwSx"],
+  ["qr/online-record.png","السجل الإلكتروني للزيارات","لتوثيق الزيارة من الجوال: البيانات وبطاقة الملاحظة والصور، وتحديث حالة الزيارة في الخطة.","claude.ai/artifact/AHA38L1VWBLSnAzs1ym7fx"]];
+function qrPanel(){
+  const cols=[4819,4819];
+  return new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:cols,layout:TableLayoutType.FIXED,rows:[new TableRow({cantSplit:true,children:QRS.map(([f,t,d,u])=>
+    new TableCell({width:{size:cols[0],type:WidthType.DXA},borders,margins:{top:160,bottom:160,left:160,right:160},verticalAlign:VerticalAlign.TOP,children:[
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:80},children:[imgRun(__dirname+"/"+f,150)]}),
+      p(t,{after:40,size:22,bold:true,color:BRAND,align:AlignmentType.CENTER}),
+      p(d,{after:40,size:17,color:"5B6675",align:AlignmentType.CENTER}),
+      new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:0},children:[new TextRun({text:u,font:FONT,size:14,color:"5B6675"})]})]}))})]});
+}
 const sec5=[new Paragraph({children:[new PageBreak()]}),h("٥","ملاحق: نماذج الزيارات","sec5"),
   p("نماذج الزيارات المحفوظة في Google Drive، أُعيد بناؤها جداول قابلة للتعبئة بتنسيق السجل: استمارة زيارة المعلمة المعتمدة في الإشراف التربوي (ع-7-004)، واستمارة تبادل الزيارات مُعبّأة لكل زوج مرشح في قسم «ترشيحات الزيارات التبادلية» مع نسخة فارغة.",{color:"5B6675",size:20}),
-  ...officialForm().slice(1),
+  h3("رموز الاستجابة السريعة (QR)","qr"),
+  p("وجّهي كاميرا الجوال إلى الرمز لفتح الملف. يفتح الرابط لمن لهم صلاحية الوصول إلى المجلد أو الصفحة فقط.",{size:18,color:"5B6675"}),
+  qrPanel(),
+  ...officialForm(),
   ...PAIRS.flatMap((pr,i)=>exchangeForm(i+1,pr)),
   ...exchangeForm(PAIRS.length+1,null)];
 
@@ -386,5 +402,5 @@ const doc=new Document({styles:{default:{document:{run:{font:FONT,size:24,rightT
       children:[new TextRun({rightToLeft:true,font:FONT,size:18,color:"5B6675",children:["صفحة ",PageNumber.CURRENT," من ",PageNumber.TOTAL_PAGES]})]})]})},
     children:[...cover,...sec1,...sec2,...sec3,...sec4,...sec5]}]});
 const OUT=__dirname+'/../سجل-الزيارات-الصفية.docx';
-if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):id==='app1'?'أ) استمارة زيارة معلمة':id.startsWith('app2_')?(+id.slice(5)<=PAIRS.length?`ب) استمارة تبادل الزيارات ( ${id.slice(5)} )`:'ب) استمارة تبادل الزيارات (نسخة فارغة)'):t.replace(/^[١٢٣٤٥]\. /,'')]),null,0));process.exit(0);}
+if(process.env.DUMP_TOC){fs.writeFileSync(process.env.DUMP_TOC,JSON.stringify(TOCITEMS.map(([id,t])=>[id,id.startsWith('form')?t.split('  (')[0].replace(/^نموذج (\d+) — /,'نموذج توثيق زيارة صفية رقم ( $1 )  —  '):id.startsWith('web')?t.split('  (')[0].replace(/^زيارة موثقة (\d+) — /,'زيارة موثقة ( $1 )  —  '):id==='qr'?'رموز الاستجابة السريعة':id==='app1'?'أ) استمارة زيارة معلمة':id.startsWith('app2_')?(+id.slice(5)<=PAIRS.length?`ب) استمارة تبادل الزيارات ( ${id.slice(5)} )`:'ب) استمارة تبادل الزيارات (نسخة فارغة)'):t.replace(/^[١٢٣٤٥]\. /,'')]),null,0));process.exit(0);}
 Packer.toBuffer(doc).then(b=>{fs.writeFileSync(OUT,b);require('child_process').execFileSync('python3',[__dirname+'/rtl_tables.py',OUT],{stdio:'inherit'});});
