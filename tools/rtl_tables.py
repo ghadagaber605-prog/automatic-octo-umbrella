@@ -23,6 +23,13 @@ def fix(xml):
             first = list(tr).index(cells[0])
             for c in cells: tr.remove(c)
             for i, c in enumerate(reversed(cells)): tr.insert(first + i, c)
+    # docx-js gives every bookmark the same numeric id; renumber start/end pairs uniquely
+    nid, stack = 0, []
+    for el in root.iter(q("bookmarkStart"), q("bookmarkEnd")):
+        if el.tag == q("bookmarkStart"):
+            nid += 1; el.set(q("id"), str(nid)); stack.append(nid)
+        elif stack:
+            el.set(q("id"), str(stack.pop()))
     return etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
 
 def main(path):

@@ -130,11 +130,24 @@ M("2026-10-20","عبير البريدي","اللغة الإنجليزية","سا
 M("2026-10-28","الاء النفيسة","الدراسات الاجتماعية","ثاني ثانوي","3",0,"زيارة صفية مجدولة (الخارطة)"),
 M("2026-10-21","مشاعل الشويعي","العلوم","رابع ابتدائي","1",1),
 ];
+// ---- item 3: unify names, subjects and class labels ----
+const NAME={"شهد الحربي":"شهد المطيري"};            // classification sheet lists only شهد المطيري (math, grade 6) — same teacher
+const SUBJ={"التربية الإسلامية":"الدراسات الإسلامية"};
+const ORD=["","أول","ثاني","ثالث","رابع","خامس","سادس"], STG={"ب":"ابتدائي","م":"متوسط","ث":"ثانوي"};
+const normCls=c=>{let m=c.match(/^(\d)([بمث])$/); if(m) return `${ORD[+m[1]]} ${STG[m[2]]}`;
+  if(/^اول/.test(c)) c=c.replace(/^اول/,"أول"); if(c==="خامس") return "خامس ابتدائي"; return c;};
+const fixes=[];
+for(const v of [...rec,...map]){
+  if(NAME[v.teacher]){fixes.push(`${v.teacher} ← ${NAME[v.teacher]}`); v.teacher=NAME[v.teacher];}
+  if(SUBJ[v.subject]) v.subject=SUBJ[v.subject];
+  if(v.subject==="—"&&v.teacher==="الاء النفيسة") v.subject="الدراسات الاجتماعية";   // her only subject in both records
+  v.cls=normCls(v.cls);
+}
 // dedupe: same teacher + date + type in the record (repeated saves of one visit)
 const seen=new Map(); let dupes=0;
 for(const v of rec){const k=v.teacher+v.date+v.type; if(seen.has(k)){dupes++; if(v.done) seen.get(k).done=true;} else seen.set(k,v);}
 const TODAY="2026-11-01";
 const all=[...seen.values(),...map].sort((a,b)=>a.date.localeCompare(b.date)||(+a.period||9)-(+b.period||9));
 for(const v of all) v.status=v.done?"تمت":(v.date<TODAY?"لم تُوثّق":"مجدولة");
-module.exports={all,dupes,recCount:rec.length,mapCount:map.length};
+module.exports={all,dupes,recCount:rec.length,mapCount:map.length,fixes};
 if(require.main===module){const s={};all.forEach(v=>s[v.status]=(s[v.status]||0)+1);console.log(all.length,'rows; dupes removed',dupes,s,'map',map.length,'rec',rec.length);}

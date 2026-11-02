@@ -52,6 +52,31 @@ function countTable(title,keyFn,keys){
     return [k,String(vs.length),String(d),String(o),String(u),(d+o)?Math.round(100*d/(d+o))+"%":"—"];});
   return table([2638,1400,1400,1400,1400,1400],[[title,"الإجمالي","تمت","لم تُوثّق","مجدولة","نسبة التوثيق"],...rows]);
 }
+function prioritySection(){
+  const sup=[...new Set(V.all.map(v=>v.teacher))].filter(t=>clsList(t).some(isSupport));
+  const pc=[1700,2600,900,1400,1500,1538];
+  const rows=sup.map(t=>{const vs=V.all.filter(v=>v.teacher===t);const d=vs.filter(v=>v.status==="تمت").length;const nx=vs.find(v=>v.status==="مجدولة");
+    const cl=Object.entries(CLASS[t]).filter(([,c])=>isSupport(c)).map(([s,c])=>`${c} (${s})`).join("، ");
+    const style=d===0?"زيارة دعم مباشر خلال أسبوع":"زيارة متابعة + زيارة تبادلية";
+    return [t,cl,String(d),nx?`${fmt(nx.date)} / ${hijS(nx.date)}`:"تُجدول",style,d===0?"عاجل":"متابعة"];});
+  const pTable=new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:pc,layout:TableLayoutType.FIXED,rows:[
+    new TableRow({tableHeader:true,children:["المعلمة","التصنيف","زيارات موثقة","الزيارة القادمة","الإجراء الإشرافي المقترح","الأولوية"].map((h,j)=>cell(h,pc[j],{fill:SOFT,bold:true,color:BRAND,size:18}))}),
+    ...rows.map(r=>new TableRow({cantSplit:true,children:r.map((x,j)=>cell(p(x,{after:0,size:17,bold:j===0||j===5,color:j===5?(x==="عاجل"?"A83232":"A15C07"):j===1?"A83232":undefined}),pc[j],{fill:j===5&&x==="عاجل"?"FDF0DC":undefined}))}))]});
+  const xc=[1900,2700,1900,3138];
+  const xTable=new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:xc,layout:TableLayoutType.FIXED,rows:[
+    new TableRow({tableHeader:true,children:["المعلمة الزائرة","تصنيفها","المعلمة المستضيفة (★ متميزة)","المادة / المرحلة"].map((h,j)=>cell(h,xc[j],{fill:SOFT,bold:true,color:BRAND,size:18}))}),
+    ...PAIRS.map(([a,c,b,sub])=>new TableRow({cantSplit:true,children:[cell(p(a,{after:0,size:18,bold:true}),xc[0]),cell(p(c,{after:0,size:16,color:"A83232"}),xc[1]),cell(p("★ "+b,{after:0,size:18,bold:true,color:"2F7D46"}),xc[2]),cell(p(sub,{after:0,size:17}),xc[3])]}))]});
+  const stars=[...new Set(V.all.map(v=>v.teacher))].filter(t=>clsList(t).includes("معلمة متميزة"));
+  return [
+    h3("أولوية الزيارات حسب تصنيف المعلمات"),
+    p("المعلمات المصنفات «أولى بالرعاية» أو «جديدة» أو «قابلة للتطوير» — يُقدَّمن في جدولة الزيارات وفق الأسلوب الإشرافي المباشر.",{size:17,color:"5B6675"}),
+    pTable,
+    p("تنبيه: معلمتا رياض الأطفال المصنفتان «أولى بالرعاية» (في البجيدي، شادن الغفيلي) لا تظهر لهما زيارات بالاسم — زيارات الروضة مسجلة باسم «معلمة الروضة». يُستحسن تسمية المعلمة في كل زيارة روضة وجدولة زيارة دعم لكل منهما.",{size:17,color:"A83232",before:80}),
+    h3("ترشيحات الزيارات التبادلية"),
+    p(`المعلمات المتميزات (${stars.length}): ${stars.join("، ")}. يُقترح أن تزور كل معلمة من فئة الدعم معلمة متميزة في المادة والمرحلة نفسها:`,{size:17,color:"5B6675"}),
+    xTable,
+  ];
+}
 function summaryPage(){
   const done=cnt("تمت"),over=cnt("لم تُوثّق"),up=cnt("مجدولة"),due=done+over,rate=Math.round(100*done/due);
   const teachers=[...new Set(V.all.map(v=>v.teacher))];
@@ -59,11 +84,11 @@ function summaryPage(){
   // per-teacher rows
   const tRows=teachers.map(t=>{const vs=V.all.filter(v=>v.teacher===t);const d=vs.filter(v=>v.status==="تمت");const o=vs.filter(v=>v.status==="لم تُوثّق").length,u=vs.filter(v=>v.status==="مجدولة").length;
     const last=d.length?fmt(d[d.length-1].date)+" / "+hijS(d[d.length-1].date):"لا يوجد";const nxt=vs.find(v=>v.status==="مجدولة");
-    return {t,n:vs.length,d:d.length,o,u,last,nxt:nxt?fmt(nxt.date)+" / "+hijS(nxt.date):"—"};}).sort((a,b)=>a.d-b.d||b.o-a.o);
-  const tc=[1850,850,850,1000,950,2069,2069];
+    return {t,c:topClass(t),n:vs.length,d:d.length,o,u,last,nxt:nxt?fmt(nxt.date)+" / "+hijS(nxt.date):"—"};}).sort((a,b)=>(isSupport(b.c)-isSupport(a.c))||a.d-b.d||b.o-a.o);
+  const tc=[1650,1350,700,700,900,800,1769,1769];
   const tTable=new Table({visuallyRightToLeft:true,width:{size:9638,type:WidthType.DXA},columnWidths:tc,layout:TableLayoutType.FIXED,
-    rows:[new TableRow({tableHeader:true,children:["المعلمة","الإجمالي","تمت","لم تُوثّق","مجدولة","آخر زيارة موثقة","الزيارة القادمة"].map((h,j)=>cell(h,tc[j],{fill:SOFT,bold:true,color:BRAND,size:18}))}),
-      ...tRows.map(r=>new TableRow({cantSplit:true,children:[r.t,String(r.n),String(r.d),String(r.o),String(r.u),r.last,r.nxt].map((x,j)=>cell(p(x,{after:0,size:18,bold:j===0,color:j===5&&r.d===0?"A83232":undefined}),tc[j],{fill:r.d===0?"FDF0DC":undefined}))}))]});
+    rows:[new TableRow({tableHeader:true,children:["المعلمة","التصنيف","الإجمالي","تمت","لم تُوثّق","مجدولة","آخر زيارة موثقة","الزيارة القادمة"].map((h,j)=>cell(h,tc[j],{fill:SOFT,bold:true,color:BRAND,size:18}))}),
+      ...tRows.map(r=>new TableRow({cantSplit:true,children:[r.t,CLS_MARK(r.c)+r.c,String(r.n),String(r.d),String(r.o),String(r.u),r.last,r.nxt].map((x,j)=>cell(p(x,{after:0,size:j===1?16:18,bold:j===0||(j===1&&r.c!=="غير مصنفة"),color:j===1?CLS_COLOR(r.c):j===6&&r.d===0?"A83232":undefined}),tc[j],{fill:r.d===0?"FDF0DC":undefined}))}))]});
   const stages=["رياض الأطفال","ابتدائي","ابتدائي (ثنائي اللغة)","متوسط","ثانوي","متوسط / ثانوي","غير محدد"].filter(k=>V.all.some(v=>stageOf(v.cls)===k));
   const types=[...new Set(V.all.map(v=>v.type))];
   return [
@@ -74,8 +99,9 @@ function summaryPage(){
     kpiRow([[rate+"%","نسبة التوثيق من الزيارات التي حلّ موعدها",rate>=90?"2F7D46":"A83232"],["90%","المستهدف في الخطة التشغيلية (برنامج 20)"],[teachers.length,"معلمة في الخطة"],[never.length,"معلمات بلا زيارة موثقة","A83232","FDF0DC"]]),
     p(`الفجوة عن المستهدف: ${90-rate} نقطة مئوية. تُحسب النسبة = الزيارات الموثقة ÷ الزيارات التي حلّ موعدها. ترتفع بعد تحديث حالة الزيارات غير الموثقة في جدول الزيارات. مرجع المستهدف: خطة المتابعة الصفية المنتظمة (57 زيارة شهريًا بمعدل 3 زيارات يوميًا، والمستهدف ≥ 90%).`,{size:18,color:"5B6675",before:80}),
     h3("الزيارات حسب المعلمة"),
-    p("مرتبة من الأقل توثيقًا. الصفوف المظللة: معلمات لم تُوثّق لهن أي زيارة بعد — أولوية في الأسبوع القادم.",{size:18,color:"5B6675"}),
+    p("المعلمات المحتاجات للدعم (● أولى بالرعاية / جديدة / قابلة للتطوير) أولًا، ثم الأقل توثيقًا. ★ متميزة. الصفوف المظللة: لم تُوثّق لهن أي زيارة بعد. التصنيف من ورقة «تصنيف المعلمات» في سجل التدريب والنمو المهني 1448هـ (تُعرض أعلى أولوية عند اختلاف التصنيف بين المراحل).",{size:17,color:"5B6675"}),
     tTable,
+    ...prioritySection(),
     h3("الزيارات حسب المرحلة"),
     countTable("المرحلة",v=>stageOf(v.cls),stages),
     h3("الزيارات حسب نوع الزيارة"),
@@ -92,7 +118,7 @@ function visitsTable(){
   const rows=V.all.map((v,i)=>new TableRow({cantSplit:true,children:[
     c(String(i+1),cols[0],{align:AlignmentType.CENTER}),
     cell([p(`${day(v.date)} ${fmt(v.date)}`,{after:0,size:18}),p(hijS(v.date),{after:0,size:15,color:"5B6675"})],cols[1]),
-    c(v.teacher,cols[2],{bold:true}),
+    cell([p(v.teacher,{after:0,size:18,bold:true}),...(clsFor(v)!=="غير مصنفة"?[p(CLS_MARK(clsFor(v))+clsFor(v),{after:0,size:14,color:CLS_COLOR(clsFor(v))})]:[])],cols[2]),
     c(v.subject,cols[3]),c(v.cls,cols[4]),c(v.period||"—",cols[5],{align:AlignmentType.CENTER}),
     c(v.type,cols[6],{color:v.src==="الخارطة"?ACC:undefined,bold:v.src==="الخارطة"}),
     v.status==="لم تُوثّق"
@@ -103,6 +129,33 @@ function visitsTable(){
 }
 
 const sp=()=>p("",{after:60});
+// teacher classification — Google Sheet «سجل التدريب والنمو المهني 1448هـ» › تصنيف المعلمات (per stage)
+const CLASS={
+  "نوف المطيري":{"ابتدائي":"معلمة جديدة"}, "شهد المطيري":{"ابتدائي":"معلمة جديدة"},
+  "عبير البريدي":{"ابتدائي":"معلمة متميزة","متوسط":"معلمة خبرة"}, "ورود البطيح":{"ابتدائي":"معلمة خبرة"},
+  "ريم الحميميدي":{"ابتدائي":"قابلة للتطوير"}, "الهام البلتاجي":{"ابتدائي":"معلمة متطورة"},
+  "أفراح المنصور":{"ابتدائي":"معلمة متميزة","متوسط":"معلمة خبرة"}, "رنا الحربي":{"ابتدائي":"معلمة متميزة"},
+  "مشاعل الشويعي":{"ابتدائي":"معلمة متميزة","ثانوي":"معلمة خبرة"}, "منار الصميت":{"ابتدائي":"معلمة متميزة"},
+  "ذكرى الوهبي":{"ابتدائي":"معلمة متميزة"}, "مرام الرشيدي":{"متوسط":"قابلة للتطوير","ثانوي":"أولى بالرعاية"},
+  "سجى القرناس":{"متوسط":"معلمة متطورة","ثانوي":"أولى بالرعاية"}, "ريدا الفريح":{"متوسط":"معلمة متميزة","ثانوي":"معلمة خبرة"},
+  "رغد العريني":{"متوسط":"معلمة متميزة","ثانوي":"معلمة خبرة"}, "فاطمة الحربي":{"متوسط":"معلمة متطورة","ثانوي":"معلمة خبرة"},
+  "مرام الصالحي":{"متوسط":"معلمة خبرة","ثانوي":"معلمة خبرة"}, "الاء النفيسة":{"متوسط":"معلمة خبرة"},
+};
+const SUPPORT=["أولى بالرعاية","معلمة جديدة","قابلة للتطوير"], RANK=[...SUPPORT,"معلمة متطورة","معلمة خبرة","معلمة متميزة"];
+const clsList=t=>Object.values(CLASS[t]||{});
+const topClass=t=>{const l=clsList(t);return l.length?l.sort((a,b)=>RANK.indexOf(a)-RANK.indexOf(b))[0]:"غير مصنفة";};
+const clsFor=v=>{const c=CLASS[v.teacher]||{};const st=stageOf(v.cls);return c[st]||(st==="متوسط / ثانوي"?(c["ثانوي"]||c["متوسط"]):null)||topClass(v.teacher);};
+const isSupport=c=>SUPPORT.includes(c);
+const CLS_COLOR=c=>isSupport(c)?"A83232":c==="معلمة متميزة"?"2F7D46":"5B6675";
+const CLS_MARK=c=>isSupport(c)?"● ":c==="معلمة متميزة"?"★ ":"";
+// suggested exchange-visit pairs: support teacher visits a distinguished teacher of the same subject & stage
+const PAIRS=[
+  ["نوف المطيري","معلمة جديدة","أفراح المنصور","اللغة العربية — ابتدائي"],
+  ["شهد المطيري","معلمة جديدة","منار الصميت","الرياضيات — ابتدائي"],
+  ["ريم الحميميدي","قابلة للتطوير","عبير البريدي","اللغة الإنجليزية — ابتدائي"],
+  ["سجى القرناس","أولى بالرعاية (ثانوي)","عبير البريدي","اللغة الإنجليزية"],
+  ["مرام الرشيدي","أولى بالرعاية (ثانوي) / قابلة للتطوير (متوسط)","رغد العريني","العلوم — متوسط"],
+];
 
 let TOCITEMS=[];
 // Table of contents: page numbers come from tools/toc-pages.json (filled by build.sh after a first render)
@@ -125,7 +178,7 @@ function tocPage(){
 const cover=[
   new Paragraph({bidirectional:true,alignment:AlignmentType.CENTER,spacing:{before:1600,after:200},children:[r("سجل الزيارات الصفية",{size:64,bold:true,color:BRAND})]}),
   p("أداة لتخطيط الزيارات الصفية ومتابعتها وتوثيقها بالصور",{align:AlignmentType.CENTER,size:28,color:"5B6675",after:800}),
-  table([3000,6638],[["اسم المدرسة",""],["العام الدراسي",""],["الزائر (المدير / المشرف / الوكيل)",""],["تاريخ بدء السجل",""]],{header:false,h:600,labels:true}),
+  table([3000,6638],[["اسم المدرسة",SCHOOL],["العام الدراسي",YEAR+" — الفصل الدراسي الأول"],["الزائرة","أ. غادة جابر — المشرفة التربوية"],["تاريخ بدء السجل",`${day(V.all[0].date)} ${greg(V.all[0].date)} — ${hij(V.all[0].date)}`],["آخر تحديث",`${greg(TODAY)} — ${hij(TODAY)}`],["عدد المعلمات / الزيارات",`${new Set(V.all.map(v=>v.teacher)).size} معلمة · ${V.all.length} زيارة`]],{header:false,h:600,labels:true}),
   new Paragraph({children:[new PageBreak()]}),
   ...tocPage(),
   new Paragraph({children:[new PageBreak()]}),
@@ -170,7 +223,7 @@ const sec2=[new Paragraph({children:[new PageBreak()]}),h("٢","خطة الزي�
   h3("جدول الزيارات","tbl"),
   p(`مصدر البيانات: سجلّ الزيارات الصفية الإلكتروني وسجل زيارات خارطة التعليم والتعلم — حتى ${greg(TODAY)} الموافق ${hij(TODAY)}. إجمالي الزيارات: ${V.all.length} · تمت: ${cnt("تمت")} · مجدولة قادمة: ${cnt("مجدولة")} · مضى موعدها ولم تُوثّق: ${cnt("لم تُوثّق")}.`,{size:20,color:"5B6675"}),
   visitsTable(),
-  p("الحالة: «تمت» زيارة موثقة · «مجدولة» موعدها قادم · «لم تُوثّق» مضى موعدها دون تسجيل تنفيذها — ضعي علامة على ما حدث فعلًا: تمت (نُفّذت ولم تُسجَّل) أو مؤجلة (تُنقل لموعد جديد) أو ملغاة. نوع «خارطة التعليم والتعلم» = حضور درس مصمم وفق الخارطة.",{size:18,color:"5B6675",before:80}),
+  p("تحت اسم المعلمة: تصنيفها في المرحلة (● فئة دعم · ★ متميزة). الحالة: «تمت» زيارة موثقة · «مجدولة» موعدها قادم · «لم تُوثّق» مضى موعدها دون تسجيل تنفيذها — ضعي علامة على ما حدث فعلًا: تمت (نُفّذت ولم تُسجَّل) أو مؤجلة (تُنقل لموعد جديد) أو ملغاة. نوع «خارطة التعليم والتعلم» = حضور درس مصمم وفق الخارطة.",{size:18,color:"5B6675",before:80}),
 ];
 
 // 3 Documentation: one page per visit, 3 visit forms
@@ -214,7 +267,7 @@ function followUp(t){
 function visitPage(n,v){
   v=v||{};
   return [new Paragraph({children:[new PageBreak()]}),
-    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"+(v.teacher?"  —  "+v.teacher:""),"form"+n),
+    h3("نموذج توثيق زيارة صفية رقم ( "+n+" )"+(v.teacher?"  —  "+v.teacher:"")+(v.teacher&&clsFor(v)!=="غير مصنفة"?"  ("+clsFor(v)+")":""),"form"+n),
     table([2400,2419,2400,2419],[
       ["تاريخ الزيارة",v.date?[p(`${day(v.date)} ${greg(v.date)}`,{after:0,size:20}),p(hij(v.date),{after:0,size:17,color:"5B6675"})]:"","اسم المعلمة",v.teacher||""],
       ["المادة",v.subject&&v.subject!=="—"?v.subject:"","الصف / الفصل",v.cls||""],
