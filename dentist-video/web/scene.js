@@ -815,7 +815,7 @@ function stageDental(t, span) {
       let n = 0;
       babyTeeth.forEach((b, i) => {
         const app = smooth(0.58 + i * 0.045, 0.62 + i * 0.045, k); if (app > 0) n = i + 1;
-        b.g.visible = app > 0; const off = chairWorld(-0.3 + (i - 2.5) * 0.24, 1.45, 1.0); P(b.g, off[0], off[1] + Math.sin(t * 4 + i) * 0.02, off[2]); b.g.scale.setScalar(0.15 * app); b.g.rotation.y = Math.sin(t * 3 + i) * 0.3;
+        b.g.visible = app > 0; const off = chairWorld(0.55 + (i - 2.5) * 0.17, 1.38, 0.75); P(b.g, off[0], off[1] + Math.sin(t * 4 + i) * 0.02, off[2]); b.g.scale.setScalar(0.1 * app); b.g.rotation.y = Math.sin(t * 3 + i) * 0.3;
         setFace(b.face, { open: 0.3, blink: blinkAt(t, i) });
       });
       $('counter').style.opacity = n ? 1 : 0; $('counter').textContent = n ? `${n} baby teeth!`.replace('1 baby teeth', '1 baby tooth') : '';
@@ -901,7 +901,7 @@ function overlay(t, span) {
     const showA = t >= a.start - 0.1;
     $('quiz').querySelector('.a').style.display = showA ? '' : 'none'; $('quiz').querySelector('.a').textContent = '✔ ' + a.text;
     $('quiz').querySelector('.think').style.display = !showA && t > q.end ? '' : 'none';
-    $('quiz').querySelector('.think').textContent = 'Think' + '.'.repeat(1 + Math.floor((t - q.end) * 2) % 3);
+    $('quiz').querySelector('.think').textContent = 'Think' + '.'.repeat(1 + Math.floor(Math.max(0, t - q.end) * 2) % 3);
     const k = smooth(span.start, span.start + 0.5, t); $('quiz').style.transform = `translateX(-50%) scale(${0.8 + 0.2 * k})`; $('quiz').style.opacity = k;
   }
   // subtitles
