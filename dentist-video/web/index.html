@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Visiting the Dentist</title>
+<style>
+  @font-face { font-family: Fredoka; font-weight: 400 700; src: url(node_modules/@fontsource/fredoka/files/fredoka-latin-600-normal.woff2) format('woff2'); }
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  #stage { position: relative; width: 1280px; height: 720px; overflow: hidden; font-family: Fredoka, sans-serif; }
+  #stage canvas { display: block; }
+  .ov { position: absolute; pointer-events: none; }
+  #sub { left: 50%; bottom: 26px; transform: translateX(-50%); width: 1060px; display: flex; justify-content: center; }
+  #subbox { background: rgba(255,255,255,0.93); border-radius: 26px; padding: 14px 28px 16px; box-shadow: 0 8px 24px rgba(40,20,80,.28);
+            font-size: 33px; line-height: 1.22; color: #2b2350; text-align: center; position: relative; border: 4px solid #fff; }
+  #who { position: absolute; top: -24px; left: 26px; padding: 3px 18px 5px; border-radius: 18px; color: #fff; font-size: 24px; letter-spacing: .5px; box-shadow: 0 4px 10px rgba(0,0,0,.2); }
+  #vocab { top: 26px; left: 28px; background: #fff; border-radius: 22px; padding: 8px 22px 12px; box-shadow: 0 6px 18px rgba(0,0,0,.22); border: 4px solid #ffcd3c; transform-origin: left top; }
+  #vocab small { display: block; font-size: 17px; color: #9a7b00; letter-spacing: 1px; }
+  #vocab b { font-size: 40px; color: #ff6b3d; font-weight: 600; }
+  #mag { top: 26px; right: 28px; background: #6b4ce6; color: #fff; border-radius: 16px; padding: 6px 16px 9px; font-size: 22px; box-shadow: 0 6px 16px rgba(0,0,0,.25); border: 3px solid #fff; }
+  #mag span { color: #ffd84a; }
+  #title { inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 70px; }
+  #title h1 { margin: 0; font-size: 104px; color: #fff; font-weight: 700; letter-spacing: 1px;
+              text-shadow: 0 6px 0 #6b4ce6, 0 10px 0 #4a2fb8, 0 18px 30px rgba(0,0,0,.35); -webkit-text-stroke: 3px #6b4ce6; }
+  #title p { margin: 14px 0 0; font-size: 34px; color: #4a2fb8; background: #fff; padding: 6px 26px 9px; border-radius: 30px; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+  #quiz { left: 50%; top: 60px; transform: translateX(-50%); width: 900px; background: #fff; border-radius: 34px; padding: 26px 40px 30px; box-shadow: 0 14px 40px rgba(40,20,80,.35); border: 6px solid #6b4ce6; text-align: center; }
+  #quiz .tag { display: inline-block; background: #ff6b3d; color: #fff; border-radius: 20px; padding: 4px 20px 6px; font-size: 24px; }
+  #quiz .q { font-size: 46px; color: #2b2350; margin: 16px 0 4px; line-height: 1.15; }
+  #quiz .think { font-size: 30px; color: #9a8fc4; }
+  #quiz .a { font-size: 33px; color: #138a4b; background: #e5f8ec; border-radius: 22px; padding: 12px 20px 14px; margin-top: 16px; line-height: 1.25; border: 3px solid #39c27a; }
+  #end { inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 90px; }
+  #end h1 { margin: 0; font-size: 120px; color: #fff; -webkit-text-stroke: 3px #ff6b3d; text-shadow: 0 7px 0 #ff6b3d, 0 16px 30px rgba(0,0,0,.3); }
+  #counter { left: 50%; top: 40px; transform: translateX(-50%); background: #fff; border-radius: 26px; padding: 8px 30px 12px; font-size: 44px; color: #ff4f8b; border: 5px solid #ff9ec0; box-shadow: 0 8px 20px rgba(0,0,0,.25); }
+  #fade { inset: 0; background: #fff; }
+  #flash { inset: 0; background: #fff; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <div class="ov" id="title"><h1>Visiting the Dentist</h1><p>A Kids Magazine interview with Mahino</p></div>
+  <div class="ov" id="vocab"><small>NEW WORD</small><b></b></div>
+  <div class="ov" id="mag">KIDS <span>MAG</span> interview</div>
+  <div class="ov" id="counter"></div>
+  <div class="ov" id="quiz"><div class="tag">Let's think!</div><div class="q"></div><div class="think">Think...</div><div class="a"></div></div>
+  <div class="ov" id="end"><div style="text-align:center"><h1>Great job!</h1><p style="margin:10px 0 0;font-size:44px;color:#6b4ce6;background:#fff;display:inline-block;padding:4px 30px 8px;border-radius:30px">The End</p></div></div>
+  <div class="ov" id="sub"><div id="subbox"><div id="who"></div><span id="subtext"></span></div></div>
+  <div class="ov" id="flash"></div>
+  <div class="ov" id="fade"></div>
+</div>
+<script type="module" src="./scene.js"></script>
+</body>
+</html>
