@@ -543,7 +543,7 @@ function speakingEnv(t, who) {
   }
   return 0;
 }
-function lineAt(span, t) { let cur = null; for (const l of span.lines) if (t >= l.start - 0.05) cur = l; return cur; }
+function lineAt(span, t) { let cur = span.lines[0]; for (const l of span.lines) if (t >= l.start - 0.05) cur = l; return cur; }
 const lp = (l, t) => l ? clamp((t - l.start) / (l.end - l.start)) : 0;
 
 function face(ch, t, who, extra = {}) {
