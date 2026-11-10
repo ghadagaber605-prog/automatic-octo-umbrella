@@ -3,6 +3,9 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+// ?anime -> cel-shaded anime look (toon shading, ink outlines, big shiny eyes, speed lines)
+const ANIME = new URLSearchParams(location.search).has('anime');
 
 await document.fonts.load('600 40px Fredoka');
 const W = 1280, H = 720;
@@ -64,13 +67,20 @@ function makeFace(head, o) {
   f.eyes = [];
   for (const s of [-1, 1]) {
     const eye = G(); P(eye, s * 0.074, 0.02, 0.158);
-    const white = sph(0.052, M(0xffffff, { roughness: 0.25 })); white.scale.set(1, 1.15, 0.62);
-    const iris = P(sph(0.033, M(o.eye || 0x5a3420, { roughness: 0.3 })), 0, -0.004, 0.027); iris.scale.set(1, 1.08, 0.5);
-    const pupil = P(sph(0.018, M(0x120806, { roughness: 0.2 })), 0, -0.004, 0.039); pupil.scale.set(1, 1.08, 0.45);
-    const hl = P(sph(0.009, M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1 })), 0.012, 0.014, 0.046);
-    const hl2 = P(sph(0.005, M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1 })), -0.01, -0.016, 0.044);
+    const A = ANIME ? 1 : 0;
+    const white = sph(0.052 + A * 0.006, M(0xffffff, { roughness: 0.25 })); white.scale.set(1, 1.15 + A * 0.35, 0.62);
+    const iris = P(sph(0.033 + A * 0.01, M(o.eye || 0x5a3420, { roughness: 0.3 })), 0, -0.004 - A * 0.006, 0.027); iris.scale.set(1, 1.08 + A * 0.35, 0.5);
+    const pupil = P(sph(0.018 + A * 0.004, M(0x120806, { roughness: 0.2 })), 0, -0.004 - A * 0.004, 0.039); pupil.scale.set(1, 1.08 + A * 0.4, 0.45);
+    const hl = P(sph(0.009 + A * 0.007, M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1 })), 0.012 + A * 0.004, 0.014 + A * 0.014, 0.046);
+    const hl2 = P(sph(0.005 + A * 0.003, M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1 })), -0.01, -0.016 - A * 0.012, 0.044);
     const look = G(iris, pupil, hl, hl2);
     eye.add(white, look);
+    if (ANIME && !o.noLash) {
+      // bold upper lash line + small outer flick
+      const lash = mesh(new THREE.TorusGeometry(0.06, 0.009, 6, 24, PI * 0.86), M(0x1b1214));
+      lash.rotation.z = PI * 0.07; lash.scale.set(1, 1.45, 1); lash.position.set(0, 0.0, 0.022); lash.userData.noOutline = true; eye.add(lash);
+      const flick = P(cap(0.007, 0.03, M(0x1b1214)), s * 0.062, 0.05, 0.02); flick.rotation.z = s * -0.9; flick.userData.noOutline = true; eye.add(flick);
+    }
     head.add(eye); f.eyes.push({ eye, look });
   }
   f.brows = [];
@@ -78,7 +88,7 @@ function makeFace(head, o) {
     const b = P(cap(0.011, 0.05, M(o.hair, { roughness: 0.8 })), s * 0.076, 0.105, 0.172);
     b.rotation.z = PI / 2 - s * 0.03; head.add(b); f.brows.push(b);
   }
-  head.add(P(sph(0.026, M(o.skin, { roughness: 0.55 })), 0, -0.035, 0.192));
+  { const nose = P(sph(ANIME ? 0.014 : 0.026, M(o.skin, { roughness: 0.55 })), 0, -0.035, 0.192); if (ANIME) nose.userData.noOutline = true; head.add(nose); }
   for (const s of [-1, 1]) {
     const c = P(sph(0.034, M(0xff8f9a, { transparent: true, opacity: 0.45, roughness: 0.9 })), s * 0.118, -0.05, 0.142);
     c.scale.set(1, 0.7, 0.4); c.castShadow = false; head.add(c);
@@ -283,7 +293,7 @@ function tooth(o = {}) {
     const root = P(cap(0.17, 0.35, wm), s * 0.2, -0.38, 0); root.rotation.z = s * 0.18; g.add(root);
   }
   const head = P(G(), 0, 0.1, 0.0); g.add(head); head.scale.setScalar(1.9);
-  const f = makeFace(head, { skin: 0xffffff, hair: 0x4a3a6a, eye: 0x3a6bd6 });
+  const f = makeFace(head, { skin: 0xffffff, hair: 0x4a3a6a, eye: 0x3a6bd6, noLash: true });
   head.children.forEach(c => { if (c.geometry && c.geometry.type === 'SphereGeometry' && Math.abs(c.position.x) > 0.19) c.visible = false; }); // hide ears
   head.position.z = 0.06;
   const arms = [];
@@ -519,6 +529,35 @@ const T = {};
 const sparkT = makeSparkles(ST, 12);
 
 // ================= TIMELINE =================
+let outline = null;
+if (ANIME) {
+  const grad = new THREE.DataTexture(new Uint8Array([110, 110, 110, 255, 190, 190, 190, 255, 255, 255, 255, 255]), 3, 1);
+  grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.needsUpdate = true;
+  const conv = new Map();
+  const toon = m => {
+    if (!(m.isMeshStandardMaterial)) return m;
+    if (!conv.has(m)) {
+      const t = new THREE.MeshToonMaterial({ color: m.color, map: m.map, gradientMap: grad, emissive: m.emissive, emissiveMap: m.emissiveMap,
+        emissiveIntensity: m.emissiveIntensity, transparent: m.transparent, opacity: m.opacity, side: m.side, depthWrite: m.depthWrite, blending: m.blending });
+      if (m.transparent) t.userData.outlineParameters = { visible: false };
+      conv.set(m, t);
+    }
+    return conv.get(m);
+  };
+  for (const sc of [SW, SD, ST]) {
+    sc.environment = null;
+    sc.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.userData.noOutline) { o.material = toon(o.material).clone(); o.material.userData.outlineParameters = { visible: false }; return; }
+      o.material = toon(o.material);
+    });
+  }
+  // big flat surfaces (floor/walls) get no ink line
+  for (const m of conv.values()) if (m.map && !m.transparent) m.userData.outlineParameters = { thickness: 0.002, color: [0.25, 0.2, 0.3] };
+  renderer.toneMapping = THREE.NoToneMapping;
+  outline = new OutlineEffect(renderer, { defaultThickness: 0.0042, defaultColor: [0.12, 0.08, 0.12], defaultAlpha: 1 });
+  document.body.classList.add('anime');
+}
 const TL = await (await fetch('timeline.json')).json();
 const lines = TL.lines;
 // scene spans
@@ -931,7 +970,17 @@ window.renderAt = function (t) {
   else { scene = SD; stageDental(t, span); }
   if (scene !== SD) $('flash').style.opacity = 0;
   overlay(t, span);
-  renderer.render(scene, camera);
+  if (ANIME) {
+    const L = lineAt(span, t); const sk = (t - span.start) / (span.end - span.start);
+    let sl = 0;
+    if (span.name === 'xray') sl = sk < 0.14 ? 1 : 0;
+    if (span.name === 'plaque' && L) sl = lp(L, t) > 0.78 ? 1 : 0;
+    if (span.name === 'fluoride' && L && L.act === 'flavor') { const k = lp(L, t); sl = k > 0.45 && k < 0.65 ? 1 : 0; }
+    if (span.name === 'title' || span.name === 'end') sl = 0.55;
+    if (span.name === 'alfi' && L && L.act === 'six') { const k = lp(L, t); sl = k > 0.58 && k < 0.85 ? 0.8 : 0; }
+    const el = document.getElementById('speed'); el.style.opacity = sl * 0.7; el.style.transform = `rotate(${Math.floor(t * 12) * 7}deg) scale(1.6)`;
+    outline.render(scene, camera);
+  } else renderer.render(scene, camera);
   return span.name;
 };
 await document.fonts.ready;

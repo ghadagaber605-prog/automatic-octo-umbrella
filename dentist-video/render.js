@@ -15,7 +15,7 @@ fs.mkdirSync(out, { recursive: true });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') console.log('PAGE', m.type(), m.text()); });
   page.on('pageerror', e => console.log('PAGEERR', e.message));
-  await page.goto(`http://localhost:${port}/index.html`);
+  await page.goto(`http://localhost:${port}/index.html${process.env.QUERY || ''}`);
   await page.waitForFunction('window.READY === true', null, { timeout: 120000 });
   const dur = await page.evaluate('window.TL_DURATION');
   const stageEl = await page.$('#stage');
